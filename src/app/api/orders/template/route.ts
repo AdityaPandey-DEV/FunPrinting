@@ -4,6 +4,7 @@ import DynamicTemplate from '@/models/DynamicTemplate';
 import Order from '@/models/Order';
 import { fillDocxTemplate, validateFormData } from '@/lib/docxProcessor';
 import { convertDocxToPdf } from '@/lib/cloudmersive';
+import { convertDocxToPdfSync } from '@/lib/renderPdfService';
 import { uploadFile } from '@/lib/storage';
 import { createRazorpayOrder } from '@/lib/razorpay';
 import { getPricing } from '@/lib/pricing';
@@ -13,11 +14,11 @@ import { sendNewOrderNotification, sendCustomerOrderConfirmation } from '@/lib/n
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { 
-      templateId, 
-      formData, 
-      customerInfo, 
-      printingOptions, 
+    const {
+      templateId,
+      formData,
+      customerInfo,
+      printingOptions,
       deliveryOption,
       expectedDate
     } = body;
@@ -70,22 +71,40 @@ export async function POST(request: NextRequest) {
     console.log('Filling DOCX template with form data...');
     const filledDocxBuffer = await fillDocxTemplate(docxBuffer, formData);
 
-    // Convert filled DOCX to PDF
-    console.log('Converting filled DOCX to PDF...');
-    const pdfBuffer = await convertDocxToPdf(filledDocxBuffer);
-
-    // Upload both filled DOCX and PDF to storage
+    // Upload filled DOCX to storage first (needed for Fly.io fallback and for order record)
     const storageProvider = process.env.STORAGE_PROVIDER || 'cloudinary';
     console.log(`Uploading filled documents to ${storageProvider}...`);
     const filledDocxUrl = await uploadFile(
-      filledDocxBuffer, 
-      'orders/filled-docx', 
+      filledDocxBuffer,
+      'orders/filled-docx',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     );
-    
+
+    // Convert filled DOCX to PDF — Cloudmersive primary, Fly.io fallback
+    console.log('Converting filled DOCX to PDF...');
+    let pdfBuffer: Buffer;
+
+    try {
+      // Primary: Cloudmersive API
+      pdfBuffer = await convertDocxToPdf(filledDocxBuffer);
+      console.log('✅ PDF conversion successful (Cloudmersive)');
+    } catch (cloudmersiveError) {
+      console.error('❌ Cloudmersive conversion failed:', cloudmersiveError);
+      console.log('🔄 Falling back to Fly.io render service...');
+
+      // Fallback: Use already-uploaded DOCX URL with Fly.io service
+      const flyResult = await convertDocxToPdfSync(filledDocxUrl, 60000, 3);
+      if (!flyResult.success || !flyResult.pdfBuffer) {
+        throw new Error(flyResult.error || 'Both Cloudmersive and Fly.io conversion failed');
+      }
+
+      pdfBuffer = Buffer.from(flyResult.pdfBuffer, 'base64');
+      console.log('✅ PDF conversion successful (Fly.io fallback)');
+    }
+
     const filledPdfUrl = await uploadFile(
-      pdfBuffer, 
-      'orders/filled-pdf', 
+      pdfBuffer,
+      'orders/filled-pdf',
       'application/pdf'
     );
 
@@ -93,25 +112,25 @@ export async function POST(request: NextRequest) {
     const pricing = await getPricing();
     const basePrice = pricing.basePrices[printingOptions.pageSize as keyof typeof pricing.basePrices];
     const sidedMultiplier = printingOptions.sided === 'double' ? pricing.multipliers.doubleSided : 1;
-    
+
     // Calculate total amount based on color option
     const pageCount = printingOptions.pageCount || 1;
     let amount = 0;
-    
+
     if (printingOptions.color === 'mixed' && printingOptions.pageColors) {
       // Mixed color pricing: calculate separately for color and B&W pages
       const colorPages = printingOptions.pageColors.colorPages.length;
       const bwPages = printingOptions.pageColors.bwPages.length;
-      
+
       // If not all pages are specified, treat unspecified pages as B&W
       const unspecifiedPages = pageCount - (colorPages + bwPages);
       const totalBwPages = bwPages + (unspecifiedPages > 0 ? unspecifiedPages : 0);
-      
+
       const colorCost = basePrice * colorPages * pricing.multipliers.color;
       const bwCost = basePrice * totalBwPages;
-      
+
       amount = (colorCost + bwCost) * sidedMultiplier * printingOptions.copies;
-      
+
       console.log(`🔍 Template order - Mixed color pricing:`);
       console.log(`  - Color pages: ${colorPages} (₹${colorCost})`);
       console.log(`  - B&W pages: ${totalBwPages} (₹${bwCost})`);
@@ -121,7 +140,7 @@ export async function POST(request: NextRequest) {
       const colorMultiplier = printingOptions.color === 'color' ? pricing.multipliers.color : 1;
       amount = basePrice * pageCount * colorMultiplier * sidedMultiplier * printingOptions.copies;
     }
-    
+
     // Add compulsory service option cost (only for multi-page jobs)
     if (pageCount > 1) {
       if (printingOptions.serviceOption === 'binding') {
@@ -132,7 +151,7 @@ export async function POST(request: NextRequest) {
         amount += 5; // Minimal service fee
       }
     }
-    
+
     // Add delivery charge if delivery option is selected
     if (deliveryOption.type === 'delivery' && deliveryOption.deliveryCharge) {
       amount += deliveryOption.deliveryCharge;
@@ -166,7 +185,7 @@ export async function POST(request: NextRequest) {
     const baseAmount = amount;
     const finalAmount = Math.round(baseAmount * (1 + RAZORPAY_FEE_PERCENT / 100));
     const razorpayFee = finalAmount - baseAmount;
-    
+
     console.log(`💳 Razorpay fee calculation:`);
     console.log(`  - Base amount: ₹${baseAmount}`);
     console.log(`  - Razorpay fee (${RAZORPAY_FEE_PERCENT}%): ₹${razorpayFee}`);
@@ -219,7 +238,7 @@ export async function POST(request: NextRequest) {
     };
 
     const order = new Order(orderData);
-    
+
     try {
       await order.save();
       console.log(`✅ Template order created successfully with ID: ${order.orderId}`);
@@ -283,7 +302,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error creating template order:', error);
-    
+
     // Handle specific Cloudmersive API errors
     if (error.message.includes('API key')) {
       return NextResponse.json(
@@ -291,7 +310,7 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-    
+
     if (error.message.includes('quota') || error.message.includes('limit')) {
       return NextResponse.json(
         { success: false, error: 'API quota exceeded. Please try again later.' },

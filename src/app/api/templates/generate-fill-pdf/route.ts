@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fillDocxTemplate } from '@/lib/docxProcessor';
 import { uploadFile } from '@/lib/storage';
-import { convertDocxToPdfSync, checkServiceHealth } from '@/lib/renderPdfService';
+import { convertDocxToPdfSync } from '@/lib/renderPdfService';
+import { convertDocxToPdf as cloudmersiveDocxToPdf } from '@/lib/cloudmersive';
 import { v4 as uuidv4 } from 'uuid';
 import { jobStore } from '@/lib/jobStore';
 
 /**
  * Generate filled Word document and convert to PDF
- * This endpoint generates the Word file first, then converts it to PDF using Render service
+ * Uses Cloudmersive API as primary converter, Fly.io render service as fallback
  */
 export async function POST(request: NextRequest) {
   try {
     console.log('📝 Template fill with PDF conversion request received');
-    
+
     const { templateId, formData } = await request.json();
 
     console.log('[GENERATE-FILL] Received formData keys:', Object.keys(formData || {}));
@@ -25,22 +26,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if Render service is available
-    const healthCheck = await checkServiceHealth();
-    if (!healthCheck.available) {
-      console.warn('⚠️ Render service not available, will use Word file only');
-    }
-
     // Generate unique job ID
     const jobId = uuidv4();
 
     // Step 1: Generate Word document (reuse existing logic)
     console.log('📄 Step 1: Generating Word document...');
-    
+
     // Fetch template details
     const origin = new URL(request.url).origin;
     const templateUrl = `${origin}/api/admin/save-template?id=${encodeURIComponent(templateId)}`;
-    
+
     const templateRes = await fetch(templateUrl);
     if (!templateRes.ok) {
       return NextResponse.json(
@@ -63,8 +58,8 @@ export async function POST(request: NextRequest) {
     console.log('[GENERATE-FILL] Template formSchema keys:', template.formSchema?.map((f: any) => f.key) || []);
     console.log('[GENERATE-FILL] Template placeholders:', template.placeholders);
     console.log('[GENERATE-FILL] FormData keys received:', Object.keys(formData));
-    console.log('[GENERATE-FILL] Missing fields in formData:', 
-      template.formSchema?.filter((f: any) => !formData[f.key])?.map((f: any) => f.key) || 
+    console.log('[GENERATE-FILL] Missing fields in formData:',
+      template.formSchema?.filter((f: any) => !formData[f.key])?.map((f: any) => f.key) ||
       template.placeholders?.filter((p: string) => !formData[p]) || []
     );
 
@@ -104,44 +99,69 @@ export async function POST(request: NextRequest) {
     });
     console.log(`✅ Job stored in jobStore (before PDF conversion): ${jobId}, status: processing, hasWordUrl: ${!!wordUrl}`);
 
-    // Step 2: Convert to PDF if service is available
+    // Step 2: Convert to PDF — Cloudmersive primary, Fly.io fallback
     let pdfUrl: string | undefined;
     let status: 'processing' | 'completed' | 'failed' = 'completed';
     let error: string | undefined;
 
-    if (healthCheck.available) {
-      console.log('📄 Step 2: Converting Word to PDF...');
-      console.log(`📊 Word file URL: ${wordUrl}`);
+    // Primary: Try Cloudmersive API (works directly with buffer, no URL needed)
+    const hasCloudmersiveKey = !!process.env.CLOUDMERSIVE_API_KEY;
+    let cloudmersiveSucceeded = false;
+
+    if (hasCloudmersiveKey) {
+      console.log('📄 Step 2: Converting Word to PDF using Cloudmersive (primary)...');
       console.log(`📊 Word file size: ${filledBuffer.length} bytes`);
-      
-      // Attempt conversion with retry logic (3 retries)
-      const conversionResult = await convertDocxToPdfSync(wordUrl, 60000, 3);
-      
-      if (conversionResult.success && conversionResult.pdfBuffer) {
-        // Upload PDF to storage
-        const pdfBuffer = Buffer.from(conversionResult.pdfBuffer, 'base64');
+
+      try {
+        const pdfBuffer = await cloudmersiveDocxToPdf(filledBuffer);
         console.log(`📊 PDF buffer size: ${pdfBuffer.length} bytes`);
-        
+
         pdfUrl = await uploadFile(
           pdfBuffer,
           `filled-documents/${jobId}`,
           'application/pdf'
         );
-        console.log('✅ PDF uploaded to storage:', pdfUrl);
+        console.log('✅ PDF uploaded to storage (Cloudmersive):', pdfUrl);
         status = 'completed';
-      } else {
-        const errorMsg = conversionResult.error || 'PDF conversion failed';
-        console.warn('⚠️ PDF conversion failed after retries, using Word file');
-        console.warn('⚠️ Error details:', errorMsg);
-        status = 'failed';
-        error = errorMsg;
-        // Continue with Word file - don't fail the request
+        cloudmersiveSucceeded = true;
+      } catch (cloudmersiveError) {
+        console.error('❌ Cloudmersive conversion failed:', cloudmersiveError);
+        console.log('🔄 Falling back to Fly.io render service...');
       }
     } else {
-      console.log('⚠️ Render service not available, skipping PDF conversion');
-      console.log(`⚠️ Health check error: ${healthCheck.error || 'Service unavailable'}`);
-      status = 'failed';
-      error = `PDF conversion service not available: ${healthCheck.error || 'Health check failed'}`;
+      console.log('⚠️ CLOUDMERSIVE_API_KEY not configured, using Fly.io render service...');
+    }
+
+    // Fallback: Try Fly.io render service if Cloudmersive failed or unavailable
+    if (!cloudmersiveSucceeded) {
+      console.log('📄 Step 2 (fallback): Converting Word to PDF using Fly.io render service...');
+      console.log(`📊 Word file URL: ${wordUrl}`);
+
+      try {
+        const conversionResult = await convertDocxToPdfSync(wordUrl, 60000, 3);
+
+        if (conversionResult.success && conversionResult.pdfBuffer) {
+          const pdfBuffer = Buffer.from(conversionResult.pdfBuffer, 'base64');
+          console.log(`📊 PDF buffer size: ${pdfBuffer.length} bytes`);
+
+          pdfUrl = await uploadFile(
+            pdfBuffer,
+            `filled-documents/${jobId}`,
+            'application/pdf'
+          );
+          console.log('✅ PDF uploaded to storage (Fly.io fallback):', pdfUrl);
+          status = 'completed';
+        } else {
+          const errorMsg = conversionResult.error || 'PDF conversion failed';
+          console.warn('⚠️ Fly.io fallback also failed:', errorMsg);
+          status = 'failed';
+          error = errorMsg;
+        }
+      } catch (flyError) {
+        console.error('❌ Fly.io fallback conversion failed:', flyError);
+        status = 'failed';
+        error = flyError instanceof Error ? flyError.message : 'Fly.io fallback failed';
+      }
     }
 
     // Update job status after PDF conversion completes
@@ -155,9 +175,9 @@ export async function POST(request: NextRequest) {
       error,
       createdAt: existingJob?.createdAt || Date.now(), // Keep original creation time
     });
-    
+
     console.log(`✅ Job updated in jobStore: ${jobId}, status: ${status}, hasWordUrl: ${!!wordUrl}, hasPdfUrl: ${!!pdfUrl}`);
-    
+
     return NextResponse.json({
       success: true,
       jobId,
@@ -165,18 +185,18 @@ export async function POST(request: NextRequest) {
       pdfUrl,
       status,
       error,
-      message: pdfUrl 
+      message: pdfUrl
         ? 'Document generated and converted to PDF successfully'
         : 'Document generated successfully (PDF conversion unavailable)'
     });
 
   } catch (error) {
     console.error('❌ Error generating document with PDF conversion:', error);
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to generate document' 
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to generate document'
       },
       { status: 500 }
     );

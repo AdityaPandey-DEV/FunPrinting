@@ -3,13 +3,14 @@ import connectDB from '@/lib/mongodb';
 import DynamicTemplate from '@/models/DynamicTemplate';
 import { fillDocxTemplate, validateFormData } from '@/lib/docxProcessor';
 import { convertDocxToPdf } from '@/lib/cloudmersive';
+import { convertDocxToPdfSync } from '@/lib/renderPdfService';
 import { uploadFile } from '@/lib/storage';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { 
-      templateId, 
+    const {
+      templateId,
       formData,
       previewType = 'docx' // 'docx' or 'pdf'
     } = body;
@@ -67,14 +68,38 @@ export async function POST(request: NextRequest) {
     let fileName: string;
 
     if (previewType === 'pdf') {
-      // Convert filled DOCX to PDF
+      // Convert filled DOCX to PDF — Cloudmersive primary, Fly.io fallback
       console.log('🔄 Converting filled DOCX to PDF...');
-      const pdfBuffer = await convertDocxToPdf(filledDocxBuffer);
-      
+      let pdfBuffer: Buffer;
+
+      try {
+        // Primary: Cloudmersive API
+        pdfBuffer = await convertDocxToPdf(filledDocxBuffer);
+        console.log('✅ PDF conversion successful (Cloudmersive)');
+      } catch (cloudmersiveError) {
+        console.error('❌ Cloudmersive conversion failed:', cloudmersiveError);
+        console.log('🔄 Falling back to Fly.io render service...');
+
+        // Fallback: Upload DOCX to storage, then convert via Fly.io
+        const tempDocxUrl = await uploadFile(
+          filledDocxBuffer,
+          'previews/temp-docx',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        );
+
+        const flyResult = await convertDocxToPdfSync(tempDocxUrl, 60000, 3);
+        if (!flyResult.success || !flyResult.pdfBuffer) {
+          throw new Error(flyResult.error || 'Both Cloudmersive and Fly.io conversion failed');
+        }
+
+        pdfBuffer = Buffer.from(flyResult.pdfBuffer, 'base64');
+        console.log('✅ PDF conversion successful (Fly.io fallback)');
+      }
+
       // Upload PDF to storage
       previewUrl = await uploadFile(
-        pdfBuffer, 
-        'previews/pdf', 
+        pdfBuffer,
+        'previews/pdf',
         'application/pdf'
       );
       contentType = 'application/pdf';
@@ -82,8 +107,8 @@ export async function POST(request: NextRequest) {
     } else {
       // Upload filled DOCX to storage
       previewUrl = await uploadFile(
-        filledDocxBuffer, 
-        'previews/docx', 
+        filledDocxBuffer,
+        'previews/docx',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       );
       contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -107,7 +132,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('❌ Error generating preview:', error);
-    
+
     // Handle specific Cloudmersive API errors
     if (error.message.includes('API key')) {
       return NextResponse.json(
@@ -115,7 +140,7 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-    
+
     if (error.message.includes('quota') || error.message.includes('limit')) {
       return NextResponse.json(
         { success: false, error: 'API quota exceeded. Please try again later.' },
