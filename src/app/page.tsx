@@ -1,4 +1,4 @@
- 
+
 'use client';
 
 import Link from 'next/link';
@@ -42,7 +42,7 @@ export default function Home() {
       try {
         const response = await fetch('/api/pricing');
         const data = await response.json();
-        
+
         if (data.success) {
           setPricing(data.pricing);
         }
@@ -112,7 +112,7 @@ export default function Home() {
 
   const getServicePrice = (priceKey: string) => {
     if (!pricing) return 'Loading...';
-    
+
     switch (priceKey) {
       case 'bw':
         const originalBwPrice = pricing.basePrices.A4 * 2; // Original price (double current)
@@ -167,7 +167,7 @@ export default function Home() {
             Professional Printing Service
           </h1>
           <p className="text-xl md:text-2xl mb-8 text-gray-300">
-            Your trusted printing service for fast, reliable, and affordable printing solutions. 
+            Your trusted printing service for fast, reliable, and affordable printing solutions.
             <br />
             Get your documents printed and delivered to your hostel room with our professional printing service.
           </p>
