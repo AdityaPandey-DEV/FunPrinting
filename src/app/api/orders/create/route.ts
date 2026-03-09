@@ -5,21 +5,27 @@ import { createRazorpayOrder } from '@/lib/razorpay';
 import { validateOrderData, sanitizeOrderData, handleOrderError, logOrderEvent } from '@/lib/orderUtils';
 import { sendNewOrderNotification, sendCustomerOrderConfirmation } from '@/lib/notificationService';
 import { getFileTypeFromFilename } from '@/lib/fileTypeDetection';
+import { orderCreationRateLimit, getClientIdentifier, checkRateLimit } from '@/lib/ratelimit';
 
 export async function POST(request: NextRequest) {
+  // Rate limit check
+  const clientId = getClientIdentifier(request);
+  const rateLimitResponse = await checkRateLimit(orderCreationRateLimit, clientId);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     await connectDB();
-    
+
     // Check if this is a new template order (with templateId)
     const contentType = request.headers.get('content-type');
-    
+
     if (contentType?.includes('application/json')) {
       const body = await request.json();
-      
+
       // Check if this is a new template order
       if (body.templateId && body.formData) {
         console.log('🔄 Detected new template order, routing to template endpoint...');
-        
+
         try {
           // Route to our new template order endpoint
           const templateOrderResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/orders/template`, {
@@ -29,21 +35,21 @@ export async function POST(request: NextRequest) {
             },
             body: JSON.stringify(body),
           });
-          
+
           if (templateOrderResponse.ok) {
             const templateResult = await templateOrderResponse.json();
             return NextResponse.json(templateResult);
           } else {
             const errorResult = await templateOrderResponse.json();
-            logOrderEvent('template_order_routing_failed', 'unknown', { 
-              status: templateOrderResponse.status, 
-              error: errorResult.error 
+            logOrderEvent('template_order_routing_failed', 'unknown', {
+              status: templateOrderResponse.status,
+              error: errorResult.error
             }, 'error');
             return NextResponse.json(errorResult, { status: templateOrderResponse.status });
           }
         } catch (error) {
-          logOrderEvent('template_order_routing_error', 'unknown', { 
-            error: error instanceof Error ? error.message : 'Unknown error' 
+          logOrderEvent('template_order_routing_error', 'unknown', {
+            error: error instanceof Error ? error.message : 'Unknown error'
           }, 'error');
           return NextResponse.json(
             { success: false, error: 'Template order processing failed. Please try again.' },
@@ -52,12 +58,12 @@ export async function POST(request: NextRequest) {
         }
       }
     }
-    
+
     // Continue with existing order processing for file orders and legacy template orders
-    
+
     let customerInfo, orderType, fileURL, fileType, originalFileName, templateData, printingOptions, deliveryOption, expectedDate;
     let fileURLs: string[] | undefined, originalFileNames: string[] | undefined, fileTypes: string[] | undefined;
-    
+
     if (contentType?.includes('multipart/form-data')) {
       // Handle file upload
       const formData = await request.formData();
@@ -84,7 +90,7 @@ export async function POST(request: NextRequest) {
           const buffer = Buffer.from(bytes);
           fileURL = await uploadFile(buffer, 'print-service', file.type);
           console.log(`File uploaded successfully to: ${fileURL}`);
-          
+
           // Store file type and original filename for later use
           fileType = file.type;
           originalFileName = file.name;
@@ -142,17 +148,17 @@ export async function POST(request: NextRequest) {
     if (!validation.isValid) {
       logOrderEvent('validation_failed', 'unknown', { errors: validation.errors }, 'warn');
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Order validation failed', 
-          details: validation.errors 
+        {
+          success: false,
+          error: 'Order validation failed',
+          details: validation.errors
         },
         { status: 400 }
       );
     }
 
     let amount = 0;
-    
+
     // Use pageCount from frontend
     const pageCount = printingOptions.pageCount || 1;
     console.log(`📥 Backend received pageCount: ${pageCount}`);
@@ -160,25 +166,25 @@ export async function POST(request: NextRequest) {
     // Calculate amount based on printing options AND page count using pricing from database
     const { getPricing } = await import('@/lib/pricing');
     const pricing = await getPricing();
-    
+
     const basePrice = pricing.basePrices[printingOptions.pageSize as keyof typeof pricing.basePrices];
     const sidedMultiplier = printingOptions.sided === 'double' ? pricing.multipliers.doubleSided : 1;
-    
+
     // Calculate total amount based on color option
     if (printingOptions.color === 'mixed' && printingOptions.pageColors) {
       // Mixed color pricing: calculate separately for color and B&W pages
       const colorPages = printingOptions.pageColors.colorPages.length;
       const bwPages = printingOptions.pageColors.bwPages.length;
-      
+
       // If not all pages are specified, treat unspecified pages as B&W
       const unspecifiedPages = pageCount - (colorPages + bwPages);
       const totalBwPages = bwPages + (unspecifiedPages > 0 ? unspecifiedPages : 0);
-      
+
       const colorCost = basePrice * colorPages * pricing.multipliers.color;
       const bwCost = basePrice * totalBwPages;
-      
+
       amount = (colorCost + bwCost) * sidedMultiplier * printingOptions.copies;
-      
+
       console.log(`🔍 Mixed color pricing calculation:`);
       console.log(`  - Color pages: ${colorPages} (₹${colorCost})`);
       console.log(`  - B&W pages: ${totalBwPages} (₹${bwCost})`);
@@ -188,7 +194,7 @@ export async function POST(request: NextRequest) {
       const colorMultiplier = printingOptions.color === 'color' ? pricing.multipliers.color : 1;
       amount = basePrice * pageCount * colorMultiplier * sidedMultiplier * printingOptions.copies;
     }
-    
+
     // Add compulsory service option cost (only for multi-page jobs)
     if (pageCount > 1) {
       if (printingOptions.serviceOption === 'binding') {
@@ -199,17 +205,17 @@ export async function POST(request: NextRequest) {
         amount += 5; // Minimal service fee
       }
     }
-    
+
     // Add delivery charge if delivery option is selected
     if (deliveryOption.type === 'delivery' && deliveryOption.deliveryCharge) {
       amount += deliveryOption.deliveryCharge;
     }
-    
+
     console.log(`🔍 BACKEND CALCULATION DEBUG:`);
     console.log(`  - Base Price (${printingOptions.pageSize}): ₹${basePrice}`);
     console.log(`  - Page Count: ${pageCount}`);
     console.log(`  - Color Option: ${printingOptions.color}`);
-    
+
     if (printingOptions.color === 'mixed' && printingOptions.pageColors) {
       console.log(`  - Color Pages: ${printingOptions.pageColors.colorPages.length} pages (₹${basePrice * printingOptions.pageColors.colorPages.length * pricing.multipliers.color})`);
       console.log(`  - B&W Pages: ${printingOptions.pageColors.bwPages.length} pages (₹${basePrice * printingOptions.pageColors.bwPages.length})`);
@@ -217,7 +223,7 @@ export async function POST(request: NextRequest) {
       const colorMultiplier = printingOptions.color === 'color' ? pricing.multipliers.color : 1;
       console.log(`  - Color Multiplier: ${colorMultiplier}x`);
     }
-    
+
     console.log(`  - Sided (${printingOptions.sided}): ${sidedMultiplier}x`);
     console.log(`  - Copies: ${printingOptions.copies}`);
     console.log(`  - Service Option: ${pageCount > 1 ? printingOptions.serviceOption : 'N/A (single page)'}`);
@@ -239,7 +245,7 @@ export async function POST(request: NextRequest) {
     const baseAmount = amount;
     const finalAmount = Math.round(baseAmount * (1 + RAZORPAY_FEE_PERCENT / 100));
     const razorpayFee = finalAmount - baseAmount;
-    
+
     console.log(`💳 Razorpay fee calculation:`);
     console.log(`  - Base amount: ₹${baseAmount}`);
     console.log(`  - Razorpay fee (${RAZORPAY_FEE_PERCENT}%): ₹${razorpayFee}`);
@@ -270,7 +276,7 @@ export async function POST(request: NextRequest) {
         // Import the PickupLocation model directly
         const PickupLocation = (await import('@/models/PickupLocation')).default;
         const selectedLocation = await PickupLocation.findById(deliveryOption.pickupLocationId);
-        
+
         if (selectedLocation) {
           enhancedDeliveryOption = {
             ...deliveryOption,
@@ -286,20 +292,20 @@ export async function POST(request: NextRequest) {
               gmapLink: selectedLocation.gmapLink
             }
           };
-          logOrderEvent('pickup_location_enhanced', 'unknown', { 
+          logOrderEvent('pickup_location_enhanced', 'unknown', {
             locationId: deliveryOption.pickupLocationId,
-            locationName: selectedLocation.name 
+            locationName: selectedLocation.name
           }, 'info');
         } else {
-          logOrderEvent('pickup_location_not_found', 'unknown', { 
-            locationId: deliveryOption.pickupLocationId 
+          logOrderEvent('pickup_location_not_found', 'unknown', {
+            locationId: deliveryOption.pickupLocationId
           }, 'warn');
           // Continue with original delivery option - pickup location not found
         }
       } catch (error) {
-        logOrderEvent('pickup_location_fetch_error', 'unknown', { 
+        logOrderEvent('pickup_location_fetch_error', 'unknown', {
           error: error instanceof Error ? error.message : 'Unknown error',
-          locationId: deliveryOption.pickupLocationId 
+          locationId: deliveryOption.pickupLocationId
         }, 'error');
         console.error('Error fetching pickup location details:', error);
         // Continue with original delivery option if fetch fails
@@ -310,7 +316,7 @@ export async function POST(request: NextRequest) {
     let fileURLsArray: string[] = [];
     let originalFileNamesArray: string[] = [];
     let fileTypesArray: string[] = [];
-    
+
     // Check if we have fileURLs from the parsed body (for JSON requests)
     // For multipart/form-data, we only have single file, so use fileURL
     if (fileURLs && Array.isArray(fileURLs) && fileURLs.length > 0) {
@@ -318,13 +324,13 @@ export async function POST(request: NextRequest) {
     } else if (fileURL) {
       fileURLsArray = [fileURL];
     }
-    
+
     if (originalFileNames && Array.isArray(originalFileNames) && originalFileNames.length > 0) {
       originalFileNamesArray = originalFileNames;
     } else if (originalFileName) {
       originalFileNamesArray = [originalFileName];
     }
-    
+
     // Extract fileTypes array
     if (fileTypes && Array.isArray(fileTypes) && fileTypes.length > 0) {
       fileTypesArray = fileTypes;
@@ -332,16 +338,16 @@ export async function POST(request: NextRequest) {
       // For legacy single file or multipart/form-data
       fileTypesArray = [fileType];
     }
-    
+
     // Detect fileType from filenames if not provided
     if (orderType === 'file' && fileURLsArray.length > 0) {
       // Detect fileType for each file if missing
       for (let i = 0; i < fileURLsArray.length; i++) {
         if (!fileTypesArray[i] || fileTypesArray[i] === 'application/octet-stream') {
-          const detectedType = originalFileNamesArray[i] 
+          const detectedType = originalFileNamesArray[i]
             ? getFileTypeFromFilename(originalFileNamesArray[i], fileURLsArray[i])
             : getFileTypeFromFilename('', fileURLsArray[i]);
-          
+
           if (fileTypesArray[i]) {
             fileTypesArray[i] = detectedType;
           } else {
@@ -350,7 +356,7 @@ export async function POST(request: NextRequest) {
           console.log(`🔍 Detected fileType for file ${i + 1}: ${detectedType}`);
         }
       }
-      
+
       // Also set legacy fileType if not set
       if (!fileType && fileTypesArray.length > 0) {
         fileType = fileTypesArray[0];

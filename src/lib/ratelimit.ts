@@ -29,6 +29,28 @@ export const statusRateLimit = new Ratelimit({
 });
 
 /**
+ * Rate limiter for order creation API
+ * Allows 10 requests per 60 seconds per IP
+ */
+export const orderCreationRateLimit = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(10, '60 s'),
+    prefix: 'ratelimit:order-creation',
+    analytics: true,
+});
+
+/**
+ * Rate limiter for Razorpay webhook
+ * Allows 100 requests per 60 seconds per IP
+ */
+export const webhookRateLimit = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(100, '60 s'),
+    prefix: 'ratelimit:webhook',
+    analytics: true,
+});
+
+/**
  * Get client identifier from request (IP address or fallback)
  */
 export function getClientIdentifier(request: NextRequest): string {
