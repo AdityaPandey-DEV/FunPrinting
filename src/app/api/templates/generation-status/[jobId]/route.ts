@@ -4,7 +4,7 @@ import { jobStore } from '@/lib/jobStore';
 
 /**
  * Check generation and conversion status
- * This endpoint checks the status of PDF conversion
+ * Reads from Redis-backed jobStore for cross-instance persistence
  */
 export async function GET(
   request: NextRequest,
@@ -22,9 +22,9 @@ export async function GET(
 
     console.log(`🔍 Checking generation status for job: ${jobId}`);
 
-    // Check in-memory job store first
-    const job = jobStore.get(jobId);
-    
+    // Check Redis job store
+    const job = await jobStore.get(jobId);
+
     if (job) {
       // Job found in store - calculate progress based on status
       let progress = 50; // Word generation done
@@ -38,25 +38,25 @@ export async function GET(
       } else if (job.status === 'failed') {
         progress = 50; // Word done, PDF failed
       }
-      
-      console.log(`✅ Job found in store: ${jobId}, status: ${job.status}, progress: ${progress}%, hasWordUrl: ${!!job.wordUrl}, hasPdfUrl: ${!!job.pdfUrl}`);
-      
+
+      console.log(`✅ Job found in Redis: ${jobId}, status: ${job.status}, progress: ${progress}%, hasWordUrl: ${!!job.wordUrl}, hasPdfUrl: ${!!job.pdfUrl}`);
+
       return NextResponse.json({
         success: true,
         status: job.status,
         progress,
         pdfUrl: job.pdfUrl,
-        wordUrl: job.wordUrl, // Always return wordUrl, even if PDF conversion failed
+        wordUrl: job.wordUrl,
         error: job.error,
       });
     }
-    
-    console.log(`⚠️ Job not found in store: ${jobId}, checking Render service...`);
+
+    console.log(`⚠️ Job not found in Redis: ${jobId}, checking Render service...`);
 
     // Job not found in store - might be from async conversion
     // Check Render service for async job status
     const conversionStatus = await checkConversionStatus(jobId);
-    
+
     if (conversionStatus.status === 'completed' || conversionStatus.status === 'failed') {
       const progress = conversionStatus.status === 'completed' ? 100 : 50;
       return NextResponse.json({
@@ -73,20 +73,19 @@ export async function GET(
     return NextResponse.json({
       success: true,
       status: 'processing',
-      progress: 50, // Word generation done, PDF processing
+      progress: 50,
       error: conversionStatus.error,
     });
 
   } catch (error) {
     console.error('❌ Error checking generation status:', error);
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to check status' 
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to check status'
       },
       { status: 500 }
     );
   }
 }
-
