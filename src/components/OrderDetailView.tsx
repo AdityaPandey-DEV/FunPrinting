@@ -347,6 +347,24 @@ export function OrderDetailView(props: OrderDetailViewProps) {
                 <span className="font-medium">{order.printingOptions.pageCount}</span>
               </div>
             )}
+            {(order.printingOptions?.serviceOption || (order.printingOptions?.serviceOptions && order.printingOptions.serviceOptions.length > 0)) && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Service Type:</span>
+                <span className="font-medium">
+                  {order.printingOptions?.serviceOptions && order.printingOptions.serviceOptions.length > 0
+                    ? order.printingOptions.serviceOptions.map((s: string) => (
+                      <span key={s} className="inline-block ml-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200">
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </span>
+                    ))
+                    : order.printingOptions?.serviceOption
+                      ? <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200">
+                        {order.printingOptions.serviceOption.charAt(0).toUpperCase() + order.printingOptions.serviceOption.slice(1)}
+                      </span>
+                      : 'N/A'}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-gray-600">Total Amount:</span>
               <span className="text-xl font-bold text-gray-900">₹{order.amount}</span>
