@@ -707,6 +707,9 @@ export function OrderDetailView(props: OrderDetailViewProps) {
                         ? (order.printingOptions as any).fileOptions[idx]
                         : undefined;
                       const modeValue = fileOpt?.color || order.printingOptions?.color;
+                      const fileServiceType = Array.isArray(order.printingOptions?.serviceOptions) && order.printingOptions.serviceOptions.length > idx
+                        ? order.printingOptions.serviceOptions[idx]
+                        : order.printingOptions?.serviceOption || null;
 
                       const getFileIcon = () => {
                         if (isImage) return <ImageIcon size={20} className="w-5 h-5" />;
@@ -767,6 +770,14 @@ export function OrderDetailView(props: OrderDetailViewProps) {
                                       ? 'Color'
                                       : 'B&W'}
                                 </span>
+                                {fileServiceType && (
+                                  <span
+                                    className="text-[10px] px-2 py-0.5 rounded-full border bg-indigo-50 text-indigo-700 border-indigo-200"
+                                    title={`Service: ${fileServiceType.charAt(0).toUpperCase() + fileServiceType.slice(1)}`}
+                                  >
+                                    {fileServiceType.charAt(0).toUpperCase() + fileServiceType.slice(1)}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
