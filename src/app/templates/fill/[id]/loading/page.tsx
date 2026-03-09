@@ -29,27 +29,27 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
     try {
       const parsedData = JSON.parse(storedData);
       const { templateId, formData, wordUrl: existingWordUrl, paymentCompleted } = parsedData;
-      
+
       // Clear stored data immediately
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('pendingTemplateFormData');
       }
-      
+
       console.log('🔄 Making API call to generate document...');
       console.log('[LOADING] Template ID:', templateId);
       console.log('[LOADING] Form data keys:', Object.keys(formData));
       console.log('[LOADING] Payment completed:', paymentCompleted || false);
       console.log('[LOADING] Existing Word URL:', existingWordUrl || 'None');
-      
+
       // If payment was completed, this is a post-payment generation
       if (paymentCompleted) {
         console.log('✅ Payment already completed, proceeding with document generation...');
       }
-      
+
       // Start progress animation immediately (don't wait for API response)
       setCurrentMessage('Generating file...');
       setStatus(prev => ({ ...prev, status: 'processing', progress: 0 }));
-      
+
       // Make API call
       const response = await fetch('/api/templates/generate-fill-pdf', {
         method: 'POST',
@@ -79,12 +79,12 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
       }
 
       const result = await response.json();
-      
+
       if (result.success) {
         console.log('✅ Generation API call successful');
         console.log('[LOADING] Job ID:', result.jobId);
         console.log('[LOADING] Status:', result.status);
-        
+
         // Set jobId to trigger polling
         if (result.jobId) {
           setJobId(result.jobId);
@@ -95,7 +95,7 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
             sessionStorage.setItem(`template_${templateIdParam}_jobId`, result.jobId);
           }
         }
-        
+
         // If already complete, redirect immediately
         if (result.status === 'completed' && result.pdfUrl) {
           console.log('✅ Generation completed immediately, redirecting to complete page');
@@ -124,7 +124,7 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
           setStatus(prev => ({ ...prev, wordUrl: result.wordUrl, progress: 50 }));
           setCurrentMessage('Converting to PDF...');
         }
-        
+
         // If we have a jobId, the polling useEffect will handle the rest
         // If not, we'll continue with the progress animation
       } else {
@@ -142,13 +142,13 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
     const getParams = async () => {
       const resolvedParams = await params;
       setTemplateId(resolvedParams.id);
-      
+
       const jobIdParam = searchParams.get('jobId');
       const statusParam = searchParams.get('status');
       const pdfUrlParam = searchParams.get('pdfUrl');
       const wordUrlParam = searchParams.get('wordUrl');
       const errorParam = searchParams.get('error');
-      
+
       // Check for jobId in URL params first, then sessionStorage (for refresh case)
       let jobId = jobIdParam;
       if (!jobId && typeof window !== 'undefined') {
@@ -159,11 +159,11 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
           router.replace(`/templates/fill/${resolvedParams.id}/loading?jobId=${jobIdFromStorage}`);
         }
       }
-      
+
       // Check if we have a jobId from URL params or sessionStorage
       if (jobId) {
         setJobId(jobId);
-        
+
         // If status, URLs, or error are provided in URL params, use them immediately
         // This handles the case where generation completed synchronously
         if (statusParam === 'completed' && pdfUrlParam) {
@@ -201,7 +201,7 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
             return;
           }
         }
-        
+
         // No jobId and no stored data - show error
         setError('Job ID or form data not found. Please go back and try again.');
       }
@@ -214,10 +214,10 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
   useEffect(() => {
     // Only start animation if we don't have a jobId yet (waiting for API response)
     if (jobId) return;
-    
+
     let progressInterval: NodeJS.Timeout | undefined;
     let currentProgress = 0;
-    
+
     // Animate progress from 0 to 50% (Word generation phase)
     const animateProgress = () => {
       progressInterval = setInterval(() => {
@@ -384,7 +384,7 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
               setError(result.error || 'Generation failed. Please try again.');
             }
           }
-          
+
           // If processing but we have wordUrl and it's been more than 30 seconds, allow user to continue
           if (result.status === 'processing' && result.wordUrl && (Date.now() - startTime > 30000)) {
             console.log('⏱️ Processing for more than 30s, allowing user to continue with Word file');
@@ -458,7 +458,7 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
           <div className="mb-8">
             <div className="relative w-24 h-24 mx-auto">
               <div className="absolute inset-0 border-4 border-blue-200 rounded-full"></div>
-              <div 
+              <div
                 className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"
                 style={{ animationDuration: '1s' }}
               ></div>
@@ -469,15 +469,15 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
           <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium text-gray-700">{currentMessage}</span>
-              <span className="text-sm font-bold text-blue-600">{status.progress}%</span>
+              <span className="text-sm font-bold text-blue-600">{Math.round(status.progress)}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
               <div
                 className="bg-gradient-to-r from-blue-500 to-indigo-600 h-4 rounded-full transition-all duration-500 ease-out flex items-center justify-center"
-                style={{ width: `${status.progress}%` }}
+                style={{ width: `${Math.round(status.progress)}%` }}
               >
                 {status.progress > 10 && (
-                  <span className="text-xs font-semibold text-white">{status.progress}%</span>
+                  <span className="text-xs font-semibold text-white">{Math.round(status.progress)}%</span>
                 )}
               </div>
             </div>
@@ -495,7 +495,7 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
               )}
               <span className="text-sm font-medium">Generating file</span>
             </div>
-            
+
             <div className={`flex items-center justify-center space-x-2 ${status.progress >= 100 ? 'text-green-600' : status.progress >= 50 ? 'text-blue-600' : 'text-gray-400'}`}>
               {status.progress >= 100 ? (
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
