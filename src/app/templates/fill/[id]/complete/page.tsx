@@ -12,6 +12,7 @@ export default function TemplateCompletePage({ params }: { params: Promise<{ id:
   const [wordUrl, setWordUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [templateName, setTemplateName] = useState<string>('document');
 
   useEffect(() => {
     const getParams = async () => {
@@ -23,6 +24,7 @@ export default function TemplateCompletePage({ params }: { params: Promise<{ id:
     const pdfUrlParam = searchParams.get('pdfUrl');
     const wordUrlParam = searchParams.get('wordUrl');
     const errorParam = searchParams.get('error');
+    const templateNameParam = searchParams.get('templateName');
 
     if (pdfUrlParam) {
       setPdfUrl(decodeURIComponent(pdfUrlParam));
@@ -32,6 +34,9 @@ export default function TemplateCompletePage({ params }: { params: Promise<{ id:
     }
     if (errorParam) {
       setError(decodeURIComponent(errorParam));
+    }
+    if (templateNameParam) {
+      setTemplateName(decodeURIComponent(templateNameParam));
     }
   }, [params, searchParams]);
 
@@ -50,9 +55,11 @@ export default function TemplateCompletePage({ params }: { params: Promise<{ id:
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const fileName = pdfUrl 
-        ? `document.pdf`
-        : `document.docx`;
+      // Use template name for filename (sanitize special characters)
+      const safeName = templateName.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_') || 'document';
+      const fileName = pdfUrl
+        ? `${safeName}.pdf`
+        : `${safeName}.docx`;
       a.download = fileName;
       document.body.appendChild(a);
       a.click();
@@ -84,7 +91,7 @@ export default function TemplateCompletePage({ params }: { params: Promise<{ id:
 
     // Prioritize PDF: if PDF is available, use it; otherwise use Word
     const hasPdf = !!pdfUrl;
-    
+
     console.log('📋 Continue to Order - File selection:');
     console.log('  - PDF URL:', pdfUrl || 'Not available');
     console.log('  - Word URL:', wordUrl || 'Not available');
@@ -130,7 +137,7 @@ export default function TemplateCompletePage({ params }: { params: Promise<{ id:
 
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Document Ready!</h2>
           <p className="text-gray-600 mb-8">
-            {pdfUrl 
+            {pdfUrl
               ? 'Your document has been generated and converted to PDF successfully.'
               : 'Your document has been generated successfully.'}
           </p>

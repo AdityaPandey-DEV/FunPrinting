@@ -23,6 +23,7 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
   });
   const [currentMessage, setCurrentMessage] = useState('Generating file...');
   const [error, setError] = useState<string | null>(null);
+  const [templateName, setTemplateName] = useState<string>('document');
 
   // Function to start generation from form data
   const startGeneration = useCallback(async (storedData: string, templateIdParam: string) => {
@@ -88,7 +89,13 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
         // Set jobId to trigger polling
         if (result.jobId) {
           setJobId(result.jobId);
-          // Update URL with jobId for persistence
+          // Store template name for download filenames
+          if (result.templateName) {
+            setTemplateName(result.templateName);
+            if (typeof window !== 'undefined') {
+              sessionStorage.setItem(`template_${templateIdParam}_name`, result.templateName);
+            }
+          }
           router.replace(`/templates/fill/${templateIdParam}/loading?jobId=${result.jobId}`);
           // Store in sessionStorage as backup
           if (typeof window !== 'undefined') {
@@ -173,7 +180,7 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
             sessionStorage.removeItem(`template_${resolvedParams.id}_jobId`);
           }
           setTimeout(() => {
-            router.push(`/templates/fill/${resolvedParams.id}/complete?pdfUrl=${encodeURIComponent(pdfUrlParam)}&wordUrl=${encodeURIComponent(wordUrlParam || '')}`);
+            router.push(`/templates/fill/${resolvedParams.id}/complete?pdfUrl=${encodeURIComponent(pdfUrlParam)}&wordUrl=${encodeURIComponent(wordUrlParam || '')}&templateName=${encodeURIComponent(sessionStorage.getItem(`template_${resolvedParams.id}_name`) || 'document')}`);
           }, 500);
           return;
         } else if (statusParam === 'failed' && wordUrlParam) {
@@ -183,7 +190,7 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
             sessionStorage.removeItem(`template_${resolvedParams.id}_jobId`);
           }
           setTimeout(() => {
-            router.push(`/templates/fill/${resolvedParams.id}/complete?wordUrl=${encodeURIComponent(wordUrlParam)}&error=${encodeURIComponent(errorParam || 'PDF conversion failed. You can still download the Word document.')}`);
+            router.push(`/templates/fill/${resolvedParams.id}/complete?wordUrl=${encodeURIComponent(wordUrlParam)}&error=${encodeURIComponent(errorParam || 'PDF conversion failed. You can still download the Word document.')}&templateName=${encodeURIComponent(sessionStorage.getItem(`template_${resolvedParams.id}_name`) || 'document')}`);
           }, 500);
           return;
         } else if (wordUrlParam) {
@@ -364,7 +371,7 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
               sessionStorage.removeItem(`template_${templateId}_jobId`);
             }
             setTimeout(() => {
-              router.push(`/templates/fill/${templateId}/complete?pdfUrl=${encodeURIComponent(result.pdfUrl)}&wordUrl=${encodeURIComponent(result.wordUrl || '')}`);
+              router.push(`/templates/fill/${templateId}/complete?pdfUrl=${encodeURIComponent(result.pdfUrl)}&wordUrl=${encodeURIComponent(result.wordUrl || '')}&templateName=${encodeURIComponent(templateName)}`);
             }, 1000);
             return; // Exit early
           } else if (result.status === 'failed') {
@@ -377,7 +384,7 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
             // If failed but we have wordUrl, still redirect but show warning
             if (result.wordUrl) {
               setTimeout(() => {
-                router.push(`/templates/fill/${templateId}/complete?wordUrl=${encodeURIComponent(result.wordUrl)}&error=${encodeURIComponent(result.error || 'PDF conversion failed. You can still download the Word document.')}`);
+                router.push(`/templates/fill/${templateId}/complete?wordUrl=${encodeURIComponent(result.wordUrl)}&error=${encodeURIComponent(result.error || 'PDF conversion failed. You can still download the Word document.')}&templateName=${encodeURIComponent(templateName)}`);
               }, 1000);
               return; // Exit early
             } else {
@@ -513,7 +520,27 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-red-800 text-sm">{error}</p>
+              <p className="text-red-800 text-sm mb-3">{error}</p>
+              <button
+                onClick={() => {
+                  // Retry: check if we have stored form data to re-trigger generation
+                  setError(null);
+                  setStatus({ status: 'processing', progress: 0 });
+                  setCurrentMessage('Retrying...');
+                  if (typeof window !== 'undefined' && templateId) {
+                    const storedData = sessionStorage.getItem('pendingTemplateFormData');
+                    if (storedData) {
+                      startGeneration(storedData, templateId);
+                    } else {
+                      // No stored data — redirect back to form
+                      setError('Form data not found. Please go back and fill the form again.');
+                    }
+                  }
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+              >
+                🔄 Retry Generation
+              </button>
             </div>
           )}
 
