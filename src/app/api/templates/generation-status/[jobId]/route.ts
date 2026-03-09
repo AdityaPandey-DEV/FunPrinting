@@ -33,8 +33,8 @@ export async function GET(
       } else if (job.status === 'processing' && job.wordUrl && !job.pdfUrl) {
         // PDF conversion in progress - estimate progress based on elapsed time
         const elapsed = Date.now() - job.createdAt;
-        // Progress from 50% to 90% over 60 seconds
-        progress = 50 + Math.min((elapsed / 60000) * 40, 40);
+        // Progress from 50% to 90% over 60 seconds (rounded to avoid ugly decimals)
+        progress = Math.round(50 + Math.min((elapsed / 60000) * 40, 40));
       } else if (job.status === 'failed') {
         progress = 50; // Word done, PDF failed
       }

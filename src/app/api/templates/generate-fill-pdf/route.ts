@@ -6,6 +6,8 @@ import { convertDocxToPdf as cloudmersiveDocxToPdf } from '@/lib/cloudmersive';
 import { v4 as uuidv4 } from 'uuid';
 import { jobStore } from '@/lib/jobStore';
 import { generationRateLimit, getClientIdentifier, checkRateLimit } from '@/lib/ratelimit';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 /**
  * Background PDF conversion — runs after the API response is sent
@@ -79,6 +81,15 @@ export async function POST(request: NextRequest) {
   const clientId = getClientIdentifier(request);
   const rateLimitResponse = await checkRateLimit(generationRateLimit, clientId);
   if (rateLimitResponse) return rateLimitResponse;
+
+  // Authentication check — only signed-in users can generate documents
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json(
+      { success: false, error: 'Authentication required. Please sign in to generate documents.' },
+      { status: 401 }
+    );
+  }
 
   try {
     console.log('📝 Template fill with PDF conversion request received');
@@ -165,10 +176,12 @@ export async function POST(request: NextRequest) {
     });
 
     // Return immediately with jobId — client will poll for status
+    // Include templateName so the client can use it for download filenames
     return NextResponse.json({
       success: true,
       jobId,
       wordUrl,
+      templateName: template.name,
       status: 'processing',
       message: 'Document generated. PDF conversion in progress...',
     });
