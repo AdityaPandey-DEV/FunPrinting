@@ -66,11 +66,11 @@ async function processCompletedPaymentOrders() {
       try {
         // Check if print job already exists
         const existingPrintJob = await PrintJob.findOne({ orderId: order._id.toString() });
-        
+
         if (existingPrintJob && existingPrintJob.status !== 'pending') {
           // Print job exists and is not pending, just update order status
           await Order.findByIdAndUpdate(order._id, {
-            $set: { 
+            $set: {
               orderStatus: 'processing',
               status: 'processing'
             }
@@ -90,9 +90,9 @@ async function processCompletedPaymentOrders() {
         console.log(`🖨️ Sending print job for order: ${order.orderId}`);
         console.log(`📄 File URL: ${order.fileURL}`);
         console.log(`🖨️ Printer URL: ${printerUrls[printerIndex - 1] || 'Not configured'}`);
-        
+
         const printJobResult = await sendPrintJobFromOrder(order, printerIndex);
-        
+
         console.log(`📊 Print job result for ${order.orderId}:`, {
           success: printJobResult.success,
           message: printJobResult.message,
@@ -110,7 +110,7 @@ async function processCompletedPaymentOrders() {
         // If it failed, keep it as pending so it can be retried
         if (printJobResult.success) {
           await Order.findByIdAndUpdate(order._id, {
-            $set: { 
+            $set: {
               orderStatus: 'processing',
               status: 'processing',
               deliveryNumber
@@ -183,23 +183,46 @@ async function processCompletedPaymentOrders() {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     await connectDB();
-    
-    console.log(`🔍 ADMIN API - Fetching orders at ${new Date().toISOString()}`);
-    
-    // Just fetch orders - no automatic processing
-    // Processing should only happen when "Process Pending Orders" button is clicked
-    const orders = await Order.find({}).sort({ createdAt: -1 });
-    
-    console.log(`🔍 ADMIN API - Fetched ${orders.length} orders from database at ${new Date().toISOString()}`);
+
+    const url = new URL(request.url);
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
+    const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get('limit') || '10')));
+    const skip = (page - 1) * limit;
+
+    console.log(`🔍 ADMIN API - Fetching orders page ${page} (limit ${limit}) at ${new Date().toISOString()}`);
+
+    // Get total count and paginated orders in parallel
+    const [totalCount, orders, pendingCount, printingCount, dispatchedCount, paymentPendingCount] = await Promise.all([
+      Order.countDocuments({}),
+      Order.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Order.countDocuments({ orderStatus: 'pending' }),
+      Order.countDocuments({ orderStatus: 'printing' }),
+      Order.countDocuments({ orderStatus: 'dispatched' }),
+      Order.countDocuments({ paymentStatus: 'pending' }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    console.log(`🔍 ADMIN API - Fetched ${orders.length} of ${totalCount} orders (page ${page}/${totalPages}) at ${new Date().toISOString()}`);
 
     return NextResponse.json({
       success: true,
       orders,
       timestamp: new Date().toISOString(),
-      count: orders.length
+      count: orders.length,
+      totalCount,
+      page,
+      limit,
+      totalPages,
+      statusCounts: {
+        pending: pendingCount,
+        printing: printingCount,
+        dispatched: dispatchedCount,
+        paymentPending: paymentPendingCount,
+      },
     });
   } catch (error) {
     console.error('Error fetching orders:', error);

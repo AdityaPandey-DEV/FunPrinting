@@ -113,9 +113,16 @@ function AdminDashboardContent() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingPayments, setIsCheckingPayments] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
   const [printingOrders, setPrintingOrders] = useState<Set<string>>(new Set());
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [statusCounts, setStatusCounts] = useState({ pending: 0, printing: 0, dispatched: 0, paymentPending: 0 });
+  const ORDERS_PER_PAGE = 10;
 
   // Fetch orders on component mount
   useEffect(() => {
@@ -184,8 +191,36 @@ function AdminDashboardContent() {
     }
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (page: number = currentPage) => {
     setIsLoading(true);
+    try {
+      const response = await fetch(`/api/admin/orders?page=${page}&limit=${ORDERS_PER_PAGE}&t=${Date.now()}`);
+      const data = await response.json();
+
+      console.log('🔍 ADMIN PANEL - Received data:', data);
+      console.log('🔍 ADMIN PANEL - Orders count:', data.orders?.length || 0, 'of', data.totalCount);
+
+      if (data.success) {
+        setOrders(data.orders);
+        setCurrentPage(data.page);
+        setTotalPages(data.totalPages);
+        setTotalCount(data.totalCount);
+        if (data.statusCounts) {
+          setStatusCounts(data.statusCounts);
+        }
+      } else {
+        showError('Failed to fetch orders');
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      showError('An error occurred while fetching orders');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const refreshOrdersWithPaymentCheck = async () => {
+    setIsCheckingPayments(true);
     try {
       // 🔄 FIRST: Check Razorpay for successful payments
       console.log('🔄 Admin: Checking Razorpay payments before refreshing orders...');
@@ -200,37 +235,20 @@ function AdminDashboardContent() {
         if (paymentCheckResponse.ok) {
           const paymentCheckData = await paymentCheckResponse.json();
           console.log('✅ Admin: Payment check completed:', paymentCheckData.message);
+          showSuccess('Payment check completed: ' + (paymentCheckData.message || 'Done'));
         } else {
           console.warn('⚠️ Admin: Payment check failed, but continuing with order refresh');
+          showWarning('Payment check failed, but refreshing orders anyway');
         }
       } catch (paymentError) {
-        console.warn('⚠️ Admin: Payment check error, but continuing with order refresh:', paymentError);
+        console.warn('⚠️ Admin: Payment check error:', paymentError);
+        showWarning('Payment check error, but refreshing orders anyway');
       }
 
       // 📋 THEN: Fetch updated orders
-      const response = await fetch(`/api/admin/orders?t=${Date.now()}`);
-      const data = await response.json();
-
-      console.log('🔍 ADMIN PANEL - Received data:', data);
-      console.log('🔍 ADMIN PANEL - Orders count:', data.orders?.length || 0);
-      console.log('🔍 ADMIN PANEL - Latest orders:', data.orders?.slice(0, 3).map((o: any) => ({
-        orderId: o.orderId,
-        createdAt: o.createdAt,
-        serviceOption: o.printingOptions?.serviceOption,
-        expectedDate: o.expectedDate,
-        amount: o.amount
-      })));
-
-      if (data.success) {
-        setOrders(data.orders);
-      } else {
-        showError('Failed to fetch orders');
-      }
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      showError('An error occurred while fetching orders');
+      await fetchOrders(1);
     } finally {
-      setIsLoading(false);
+      setIsCheckingPayments(false);
     }
   };
 
@@ -330,15 +348,15 @@ function AdminDashboardContent() {
                   </span>
                 </button>
                 <button
-                  onClick={fetchOrders}
-                  disabled={isLoading}
+                  onClick={refreshOrdersWithPaymentCheck}
+                  disabled={isLoading || isCheckingPayments}
                   className="bg-black text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                 >
                   <span className="hidden sm:inline">
-                    {isLoading ? 'Checking Payments & Refreshing...' : 'Refresh Orders & Check Payments'}
+                    {isCheckingPayments ? 'Checking Payments & Refreshing...' : 'Refresh Orders & Check Payments'}
                   </span>
                   <span className="sm:hidden">
-                    {isLoading ? 'Refreshing...' : 'Refresh'}
+                    {isCheckingPayments ? 'Refreshing...' : 'Refresh'}
                   </span>
                 </button>
               </>
@@ -351,7 +369,7 @@ function AdminDashboardContent() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{orders.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalCount}</p>
                 </div>
                 <div className="flex items-center">
                   <FolderIcon size={32} className="w-8 h-8" />
@@ -364,7 +382,7 @@ function AdminDashboardContent() {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Pending</p>
                   <p className="text-2xl font-bold text-yellow-600">
-                    {orders.filter(o => o.orderStatus === 'pending').length}
+                    {statusCounts.pending}
                   </p>
                 </div>
                 <div className="flex items-center">
@@ -378,7 +396,7 @@ function AdminDashboardContent() {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Printing</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    {orders.filter(o => o.orderStatus === 'printing').length}
+                    {statusCounts.printing}
                   </p>
                 </div>
                 <div className="flex items-center">
@@ -392,7 +410,7 @@ function AdminDashboardContent() {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Payment Pending</p>
                   <p className="text-2xl font-bold text-red-600">
-                    {orders.filter(o => o.paymentStatus === 'pending').length}
+                    {statusCounts.paymentPending}
                   </p>
                 </div>
                 <div className="flex items-center">
@@ -406,7 +424,7 @@ function AdminDashboardContent() {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Dispatched</p>
                   <p className="text-2xl font-bold text-purple-600">
-                    {orders.filter(o => o.orderStatus === 'dispatched').length}
+                    {statusCounts.dispatched}
                   </p>
                 </div>
                 <div className="flex items-center">
@@ -424,7 +442,7 @@ function AdminDashboardContent() {
               title="Orders"
               description="Manage print orders"
               href="/admin/orders"
-              count={orders.length}
+              count={totalCount}
             />
             <AdminCard
               icon={<DocumentIcon size={32} className="w-8 h-8" />}
@@ -468,7 +486,7 @@ function AdminDashboardContent() {
           <div className="bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200">
             <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">All Orders ({filteredOrders.length})</h2>
+                <h2 className="text-xl font-semibold text-gray-900">All Orders ({totalCount})</h2>
                 <p className="text-sm text-gray-600">💡 Click on any order row to view detailed information</p>
               </div>
 
@@ -861,6 +879,67 @@ function AdminDashboardContent() {
             {orders.length === 0 && (
               <div className="text-center py-8">
                 <div className="text-gray-500 text-lg">No orders found.</div>
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="px-4 sm:px-6 py-4 border-t border-gray-200 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-sm text-gray-600">
+                  Showing {((currentPage - 1) * ORDERS_PER_PAGE) + 1}–{Math.min(currentPage * ORDERS_PER_PAGE, totalCount)} of {totalCount} orders
+                </div>
+                <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
+                  {/* Previous */}
+                  <button
+                    onClick={() => { const p = currentPage - 1; setCurrentPage(p); fetchOrders(p); }}
+                    disabled={currentPage <= 1 || isLoading}
+                    className="px-3 py-1.5 text-sm rounded-md border border-gray-300 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ← Prev
+                  </button>
+
+                  {/* Page numbers */}
+                  {(() => {
+                    const pages: (number | string)[] = [];
+                    if (totalPages <= 7) {
+                      for (let i = 1; i <= totalPages; i++) pages.push(i);
+                    } else {
+                      pages.push(1);
+                      if (currentPage > 3) pages.push('...');
+                      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+                        pages.push(i);
+                      }
+                      if (currentPage < totalPages - 2) pages.push('...');
+                      pages.push(totalPages);
+                    }
+                    return pages.map((p, idx) =>
+                      typeof p === 'string' ? (
+                        <span key={`ellipsis-${idx}`} className="px-2 py-1 text-gray-400">…</span>
+                      ) : (
+                        <button
+                          key={p}
+                          onClick={() => { setCurrentPage(p); fetchOrders(p); }}
+                          disabled={isLoading}
+                          className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${p === currentPage
+                              ? 'bg-black text-white border-black'
+                              : 'border-gray-300 bg-white hover:bg-gray-100'
+                            } disabled:opacity-40 disabled:cursor-not-allowed`}
+                        >
+                          {p}
+                        </button>
+                      )
+                    );
+                  })()}
+
+                  {/* Next */}
+                  <button
+                    onClick={() => { const p = currentPage + 1; setCurrentPage(p); fetchOrders(p); }}
+                    disabled={currentPage >= totalPages || isLoading}
+                    className="px-3 py-1.5 text-sm rounded-md border border-gray-300 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next →
+                  </button>
+                </div>
               </div>
             )}
           </div>
