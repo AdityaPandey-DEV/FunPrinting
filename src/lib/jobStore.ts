@@ -1,7 +1,8 @@
 /**
- * Shared in-memory job store for PDF generation status
- * Note: In production, use Redis or database for shared state across serverless functions
+ * Redis-backed job store for PDF generation status
+ * Uses Upstash Redis for persistence across serverless function instances
  */
+import { Redis } from '@upstash/redis';
 
 export interface JobStatus {
   jobId: string;
@@ -12,18 +13,54 @@ export interface JobStatus {
   createdAt: number;
 }
 
-// Shared in-memory store for job results
-export const jobStore = new Map<string, JobStatus>();
+// Initialize Upstash Redis client
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
-// Cleanup old jobs (older than 1 hour)
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
-    const oneHourAgo = Date.now() - 60 * 60 * 1000;
-    for (const [jobId, job] of jobStore.entries()) {
-      if (job.createdAt < oneHourAgo) {
-        jobStore.delete(jobId);
-      }
+const JOB_KEY_PREFIX = 'job:';
+const JOB_TTL_SECONDS = 3600; // 1 hour TTL
+
+/**
+ * Redis-backed job store with the same interface as the old Map-based store
+ */
+export const jobStore = {
+  /**
+   * Get a job by ID from Redis
+   */
+  async get(jobId: string): Promise<JobStatus | null> {
+    try {
+      const data = await redis.get<JobStatus>(`${JOB_KEY_PREFIX}${jobId}`);
+      return data || null;
+    } catch (error) {
+      console.error(`❌ Redis GET error for job ${jobId}:`, error);
+      return null;
     }
-  }, 10 * 60 * 1000); // Run cleanup every 10 minutes
-}
+  },
 
+  /**
+   * Set a job in Redis with auto-expiry
+   */
+  async set(jobId: string, data: JobStatus): Promise<void> {
+    try {
+      await redis.set(`${JOB_KEY_PREFIX}${jobId}`, data, { ex: JOB_TTL_SECONDS });
+    } catch (error) {
+      console.error(`❌ Redis SET error for job ${jobId}:`, error);
+    }
+  },
+
+  /**
+   * Delete a job from Redis
+   */
+  async delete(jobId: string): Promise<void> {
+    try {
+      await redis.del(`${JOB_KEY_PREFIX}${jobId}`);
+    } catch (error) {
+      console.error(`❌ Redis DELETE error for job ${jobId}:`, error);
+    }
+  },
+};
+
+// Export redis instance for use by rate limiter
+export { redis };

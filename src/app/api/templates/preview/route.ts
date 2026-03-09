@@ -5,8 +5,14 @@ import { fillDocxTemplate, validateFormData } from '@/lib/docxProcessor';
 import { convertDocxToPdf } from '@/lib/cloudmersive';
 import { convertDocxToPdfSync } from '@/lib/renderPdfService';
 import { uploadFile } from '@/lib/storage';
+import { generationRateLimit, getClientIdentifier, checkRateLimit } from '@/lib/ratelimit';
 
 export async function POST(request: NextRequest) {
+  // Rate limit check
+  const clientId = getClientIdentifier(request);
+  const rateLimitResponse = await checkRateLimit(generationRateLimit, clientId);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const body = await request.json();
     const {
