@@ -6,12 +6,23 @@ import { validateOrderData, sanitizeOrderData, handleOrderError, logOrderEvent }
 import { sendNewOrderNotification, sendCustomerOrderConfirmation } from '@/lib/notificationService';
 import { getFileTypeFromFilename } from '@/lib/fileTypeDetection';
 import { orderCreationRateLimit, getClientIdentifier, checkRateLimit } from '@/lib/ratelimit';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   // Rate limit check
   const clientId = getClientIdentifier(request);
   const rateLimitResponse = await checkRateLimit(orderCreationRateLimit, clientId);
   if (rateLimitResponse) return rateLimitResponse;
+
+  // Authentication check — only signed-in users can create orders
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json(
+      { success: false, error: 'Authentication required. Please sign in to place an order.' },
+      { status: 401 }
+    );
+  }
 
   try {
     await connectDB();
@@ -239,7 +250,7 @@ export async function POST(request: NextRequest) {
     console.log(`  - Delivery: ${deliveryOption.type === 'delivery' ? `₹${deliveryOption.deliveryCharge}` : 'Free pickup'}`);
     console.log(`  - Total: ₹${amount}`);
 
-    // Add 3% Razorpay processing fee as hidden charge
+    // Add 3% Razorpay processing fee (disclosed to customer on order page)
     // This ensures we receive at least the base amount after Razorpay's 2% fee deduction
     const RAZORPAY_FEE_PERCENT = 3;
     const baseAmount = amount;
