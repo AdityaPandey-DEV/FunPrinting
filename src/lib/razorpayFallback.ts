@@ -44,7 +44,7 @@ interface RazorpayOrder {
 async function _fetchRazorpayPayment(paymentId: string): Promise<RazorpayPayment | null> {
   try {
     const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
-    
+
     const response = await fetch(`https://api.razorpay.com/v1/payments/${paymentId}`, {
       method: 'GET',
       headers: {
@@ -71,7 +71,7 @@ async function _fetchRazorpayPayment(paymentId: string): Promise<RazorpayPayment
 async function _fetchRazorpayOrder(orderId: string): Promise<RazorpayOrder | null> {
   try {
     const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
-    
+
     const response = await fetch(`https://api.razorpay.com/v1/orders/${orderId}`, {
       method: 'GET',
       headers: {
@@ -97,7 +97,7 @@ async function _fetchRazorpayOrder(orderId: string): Promise<RazorpayOrder | nul
 async function fetchOrderPayments(orderId: string): Promise<RazorpayPayment[]> {
   try {
     const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
-    
+
     const response = await fetch(`https://api.razorpay.com/v1/orders/${orderId}/payments`, {
       method: 'GET',
       headers: {
@@ -134,7 +134,7 @@ function extractOrderIdFromDescription(description: string): string | null {
 async function updateOrderStatus(orderId: string, paymentId: string, amount: number): Promise<boolean> {
   try {
     await connectDB();
-    
+
     const order = await Order.findOne({ orderId });
     if (!order) {
       console.error(`❌ Order not found: ${orderId}`);
@@ -156,8 +156,8 @@ async function updateOrderStatus(orderId: string, paymentId: string, amount: num
 
     // Update order with payment details
     const updateResult = await Order.findOneAndUpdate(
-      { 
-        _id: order._id, 
+      {
+        _id: order._id,
         paymentStatus: { $ne: 'completed' } // Only update if not already completed
       },
       {
@@ -212,7 +212,7 @@ async function updateOrderStatus(orderId: string, paymentId: string, amount: num
         }
 
         console.log('🖨️ Creating print job for order:', updateResult.orderId);
-        
+
         // Calculate estimated duration
         const estimatedDuration = Math.ceil(
           (updateResult.printingOptions.pageCount * updateResult.printingOptions.copies * 0.5) + // 0.5 minutes per page
@@ -249,27 +249,30 @@ async function updateOrderStatus(orderId: string, paymentId: string, amount: num
 
 // Main function to check and update pending orders
 // minAgeMinutes: Only check orders older than this many minutes (default: 5)
-export async function checkPendingOrdersFromRazorpay(minAgeMinutes: number = 5): Promise<void> {
+// maxBatch: Maximum number of orders to check per run (default: 50)
+export async function checkPendingOrdersFromRazorpay(minAgeMinutes: number = 5, maxBatch: number = 50): Promise<void> {
   try {
-    console.log(`🔄 Starting Razorpay reconciliation check for pending orders (min age: ${minAgeMinutes} minutes)...`);
-    
+    console.log(`🔄 Starting Razorpay reconciliation check for pending orders (min age: ${minAgeMinutes} minutes, batch limit: ${maxBatch})...`);
+
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
       console.error('❌ Razorpay credentials not configured');
       return;
     }
 
     await connectDB();
-    
-    // Find pending payment orders older than minAgeMinutes
+
+    // Find pending payment orders older than minAgeMinutes but not older than 7 days
+    // Orders older than 7 days are likely abandoned and checking them wastes Razorpay API calls
     const minAgeMs = minAgeMinutes * 60 * 1000;
     const minAgeDate = new Date(Date.now() - minAgeMs);
-    
+    const maxAgeDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days
+
     const pendingOrders = await Order.find({
       paymentStatus: 'pending',
       status: 'pending_payment',
       razorpayOrderId: { $exists: true, $ne: null },
-      createdAt: { $lt: minAgeDate } // Only check orders older than minAgeMinutes
-    }).sort({ createdAt: 1 }); // Process oldest first
+      createdAt: { $lt: minAgeDate, $gt: maxAgeDate } // Between minAge and 7 days old
+    }).sort({ createdAt: -1 }).limit(maxBatch); // Newest first, capped at maxBatch
 
     console.log(`📋 Found ${pendingOrders.length} pending orders older than ${minAgeMinutes} minutes to check`);
 
@@ -278,10 +281,10 @@ export async function checkPendingOrdersFromRazorpay(minAgeMinutes: number = 5):
     for (const order of pendingOrders) {
       try {
         console.log(`🔍 Checking order: ${order.orderId} (Razorpay: ${order.razorpayOrderId})`);
-        
+
         // Get all payments for this order
         const payments = await fetchOrderPayments(order.razorpayOrderId);
-        
+
         if (payments.length === 0) {
           console.log(`ℹ️ No payments found for order ${order.orderId}`);
           continue;
@@ -291,7 +294,7 @@ export async function checkPendingOrdersFromRazorpay(minAgeMinutes: number = 5):
         for (const payment of payments) {
           if (isPaymentSuccessful(payment)) {
             console.log(`✅ Found successful payment ${payment.id} for order ${order.orderId}`);
-            
+
             // Verify the payment amount matches
             const expectedAmount = Math.round(order.amount * 100); // Convert to paise
             if (payment.amount !== expectedAmount) {
@@ -323,7 +326,7 @@ export async function checkPendingOrdersFromRazorpay(minAgeMinutes: number = 5):
 export async function checkSpecificOrderFromRazorpay(razorpayOrderId: string): Promise<boolean> {
   try {
     console.log(`🔍 Checking specific order from Razorpay: ${razorpayOrderId}`);
-    
+
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
       console.error('❌ Razorpay credentials not configured');
       return false;
@@ -331,7 +334,7 @@ export async function checkSpecificOrderFromRazorpay(razorpayOrderId: string): P
 
     // Get all payments for this order
     const payments = await fetchOrderPayments(razorpayOrderId);
-    
+
     if (payments.length === 0) {
       console.log(`ℹ️ No payments found for Razorpay order ${razorpayOrderId}`);
       return false;
@@ -341,7 +344,7 @@ export async function checkSpecificOrderFromRazorpay(razorpayOrderId: string): P
     for (const payment of payments) {
       if (isPaymentSuccessful(payment)) {
         console.log(`✅ Found successful payment ${payment.id} for Razorpay order ${razorpayOrderId}`);
-        
+
         // Extract order ID from description
         const orderId = extractOrderIdFromDescription(payment.description);
         if (!orderId) {

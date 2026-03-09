@@ -3817,10 +3817,18 @@ function OrderPageContent() {
                           <span className="font-medium text-gray-800">₹{pricingData?.additionalServices?.minServiceFee || 5}</span>
                         </div>
                       )}
-                      <div className="border-t pt-3 mt-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xl font-bold text-gray-800">Total Amount:</span>
-                          <span className="text-2xl font-bold text-gray-800">₹{amount.toFixed(2)}</span>
+                      <div className="border-t pt-3 mt-4 space-y-2">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600">Subtotal:</span>
+                          <span className="font-medium text-gray-800">₹{amount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-500 flex items-center gap-1">Processing fee (3%) <span className="text-xs text-gray-400" title="Covers payment gateway charges">ℹ️</span></span>
+                          <span className="font-medium text-gray-600">₹{(amount * 0.03).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                          <span className="text-xl font-bold text-gray-800">Total:</span>
+                          <span className="text-2xl font-bold text-gray-800">₹{(amount * 1.03).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -4267,10 +4275,18 @@ function OrderPageContent() {
                   </div>
 
                   {/* Total Amount */}
-                  <div className="border-t pt-4 mb-6">
-                    <div className="flex justify-between items-center">
+                  <div className="border-t pt-4 mb-6 space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-600">Subtotal:</span>
+                      <span className="font-medium">₹{amount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-500">Processing fee (3%)</span>
+                      <span className="text-gray-500">₹{(amount * 0.03).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                       <span className="text-lg font-semibold text-gray-800">Total:</span>
-                      <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">₹{amount.toFixed(2)}</span>
+                      <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">₹{(amount * 1.03).toFixed(2)}</span>
                     </div>
                   </div>
 
