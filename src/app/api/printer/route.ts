@@ -138,11 +138,13 @@ export async function POST(request: NextRequest) {
     console.log(`🖨️ Sending print job for order ${orderId} to printer ${selectedPrinterIndex}`);
     const result = await sendPrintJobFromOrder(order, selectedPrinterIndex);
 
-    if (result.success && result.deliveryNumber) {
-      // Update delivery number from printer API response
-      await Order.findByIdAndUpdate(order._id, {
-        $set: { deliveryNumber: result.deliveryNumber }
-      });
+    if (result.success) {
+      // Update order status to 'printing' and delivery number
+      const updateFields: any = { orderStatus: 'printing', status: 'printing' };
+      if (result.deliveryNumber) {
+        updateFields.deliveryNumber = result.deliveryNumber;
+      }
+      await Order.findByIdAndUpdate(order._id, { $set: updateFields });
     }
 
     return NextResponse.json({

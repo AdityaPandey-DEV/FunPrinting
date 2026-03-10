@@ -18,14 +18,15 @@ export interface OrderStateTransition {
   reason?: string;
 }
 
-export type OrderStatus = 
-  | 'draft' 
-  | 'pending_payment' 
-  | 'paid' 
-  | 'processing' 
-  | 'printing' 
-  | 'dispatched' 
-  | 'delivered' 
+export type OrderStatus =
+  | 'draft'
+  | 'pending_payment'
+  | 'paid'
+  | 'processing'
+  | 'printing'
+  | 'printed'
+  | 'dispatched'
+  | 'delivered'
   | 'refunded';
 
 export interface OrderData {
@@ -63,13 +64,13 @@ export interface OrderData {
   amount: number;
 }
 
-// Order state machine - defines valid transitions
 const ORDER_STATE_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   draft: ['pending_payment'],
   pending_payment: ['paid'],
   paid: ['processing', 'printing', 'refunded'], // Allow direct transition to printing
   processing: ['printing', 'refunded'],
-  printing: ['dispatched', 'refunded'],
+  printing: ['printed', 'dispatched', 'refunded'],
+  printed: ['dispatched', 'refunded'],
   dispatched: ['delivered', 'refunded'],
   delivered: ['refunded'],
   refunded: [] // Terminal state
@@ -155,7 +156,7 @@ export const validateOrderData = (orderData: OrderData): OrderValidationResult =
     } else {
       const { colorPages, bwPages } = orderData.printingOptions.pageColors;
       const totalSpecifiedPages = colorPages.length + bwPages.length;
-      
+
       // More lenient validation - allow partial specification but warn
       if (totalSpecifiedPages === 0) {
         errors.push({
@@ -181,7 +182,7 @@ export const validateOrderData = (orderData: OrderData): OrderValidationResult =
           code: 'DUPLICATE_PAGE_COLORS'
         });
       }
-      
+
       // Check for invalid page numbers
       if (orderData.printingOptions.pageCount) {
         const pageCount = orderData.printingOptions.pageCount;
@@ -296,18 +297,21 @@ export const validateOrderStateTransition = (from: OrderStatus, to: OrderStatus,
       ['processing', 'dispatched'],
       ['processing', 'delivered'],
       ['printing', 'delivered'],
+      ['printed', 'delivered'],
       // Allow admins to move orders backward for corrections
       ['printing', 'processing'],
+      ['printed', 'printing'],
+      ['dispatched', 'printed'],
       ['dispatched', 'printing'],
       ['delivered', 'dispatched'],
       ['delivered', 'printing'],
       ['delivered', 'processing']
     ];
-    
-    const isAdminAllowed = adminAllowedTransitions.some(([fromStatus, toStatus]) => 
+
+    const isAdminAllowed = adminAllowedTransitions.some(([fromStatus, toStatus]) =>
       fromStatus === from && toStatus === to
     );
-    
+
     if (isAdminAllowed) {
       isAllowed = true;
     }
@@ -328,6 +332,7 @@ export const getOrderStatusDisplay = (status: OrderStatus): { label: string; col
     paid: { label: 'Paid', color: 'green', description: 'Payment received, processing order' },
     processing: { label: 'Processing', color: 'blue', description: 'Order is being processed' },
     printing: { label: 'Printing', color: 'purple', description: 'Document is being printed' },
+    printed: { label: 'Printed', color: 'teal', description: 'Printing completed, ready for dispatch' },
     dispatched: { label: 'Dispatched', color: 'indigo', description: 'Order has been dispatched' },
     delivered: { label: 'Delivered', color: 'green', description: 'Order has been delivered' },
     refunded: { label: 'Refunded', color: 'orange', description: 'Order has been refunded' }
@@ -427,9 +432,9 @@ export const logOrderEvent = (event: string, orderId: string, data: any, level: 
     timestamp: new Date().toISOString(),
     ...data
   };
-  
+
   const logMessage = `[ORDER-${event.toUpperCase()}] ${JSON.stringify(sanitizedData)}`;
-  
+
   switch (level) {
     case 'error':
       console.error(logMessage);

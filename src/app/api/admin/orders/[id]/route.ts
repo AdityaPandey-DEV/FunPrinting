@@ -17,14 +17,14 @@ export async function GET(
         { status: 404 }
       );
     }
-    
+
     // Convert Mongoose document to plain object to ensure all fields are serialized
     const orderData = order.toObject ? order.toObject() : order;
-    
+
     // Ensure array fields are always present to avoid client-side crashes
     orderData.fileURLs = Array.isArray(orderData.fileURLs) ? orderData.fileURLs : [];
     orderData.originalFileNames = Array.isArray(orderData.originalFileNames) ? orderData.originalFileNames : [];
-    
+
     // Log file data for debugging
     console.log('📋 Admin API - Order file data:', {
       orderId: orderData.orderId,
@@ -37,7 +37,7 @@ export async function GET(
       fileURLs: orderData.fileURLs,
       originalFileNames: orderData.originalFileNames
     });
-    
+
     return NextResponse.json({
       success: true,
       order: orderData,
@@ -60,9 +60,9 @@ export async function PATCH(
     const { id } = await context.params;
     const body = await request.json();
     const { orderStatus } = body;
-    
+
     console.log(`🔄 Admin updating order ${id} status to: ${orderStatus}`);
-    
+
     if (!orderStatus) {
       console.log('❌ No orderStatus provided in request body');
       return NextResponse.json(
@@ -80,16 +80,16 @@ export async function PATCH(
         { status: 404 }
       );
     }
-    
+
     console.log(`📋 Current order status: ${currentOrder.status}, orderStatus: ${currentOrder.orderStatus}`);
 
     // Validate orderStatus values (different from status field)
-    const validOrderStatuses = ['pending', 'processing', 'printing', 'dispatched', 'delivered'];
+    const validOrderStatuses = ['pending', 'processing', 'printing', 'printed', 'dispatched', 'delivered'];
     if (!validOrderStatuses.includes(orderStatus)) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: `Invalid orderStatus: ${orderStatus}. Valid values are: ${validOrderStatuses.join(', ')}` 
+        {
+          success: false,
+          error: `Invalid orderStatus: ${orderStatus}. Valid values are: ${validOrderStatuses.join(', ')}`
         },
         { status: 400 }
       );
@@ -99,45 +99,51 @@ export async function PATCH(
     const statusMapping: Record<string, string> = {
       'pending': 'processing',
       'processing': 'processing',
-      'printing': 'printing', 
+      'printing': 'printing',
+      'printed': 'printed',
       'dispatched': 'dispatched',
       'delivered': 'delivered'
     };
-    
+
     const newStatus = statusMapping[orderStatus] || 'processing';
-    
+
     console.log(`🔄 Mapping orderStatus '${orderStatus}' to status '${newStatus}'`);
-    
+
     // Validate state transition for the status field with admin override
     const currentStatus = currentOrder.status as OrderStatus || 'pending_payment';
     const transition = validateOrderStateTransition(currentStatus, newStatus as OrderStatus, true); // Admin override enabled
-    
+
     if (!transition.allowed) {
       logOrderEvent('invalid_state_transition', currentOrder.orderId, {
         from: currentStatus,
         to: newStatus,
         reason: transition.reason
       }, 'warn');
-      
+
       return NextResponse.json(
-        { 
-          success: false, 
-          error: `Invalid status transition: ${transition.reason}` 
+        {
+          success: false,
+          error: `Invalid status transition: ${transition.reason}`
         },
         { status: 400 }
       );
     }
-    
+
     console.log(`🔓 Admin override enabled for transition: ${currentStatus} -> ${newStatus}`);
 
     // Update order status
+    const updateFields: any = {
+      orderStatus,
+      status: newStatus,
+      updatedAt: new Date()
+    };
+    // Set printedAt when transitioning to 'printed'
+    if (orderStatus === 'printed') {
+      updateFields.printedAt = new Date();
+    }
     const order = await Order.findByIdAndUpdate(
       id,
-      { 
-        orderStatus,
-        status: newStatus, // Also update the unified status field
-        updatedAt: new Date()
-      },
+      updateFields,
       { new: true }
     );
 
@@ -170,7 +176,7 @@ export async function DELETE(
   try {
     await connectDB();
     const { id } = await context.params;
-    
+
     const order = await Order.findByIdAndDelete(id);
     if (!order) {
       return NextResponse.json(
@@ -178,7 +184,7 @@ export async function DELETE(
         { status: 404 }
       );
     }
-    
+
     console.log(`Order ${order.orderId} deleted successfully`);
     return NextResponse.json({
       success: true,
