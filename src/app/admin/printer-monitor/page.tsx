@@ -53,10 +53,6 @@ interface PrinterStatus {
       available: boolean;
       message: string;
     };
-    retryQueue: {
-      total: number;
-      jobs: Array<{ timestamp: Date }>;
-    };
   };
   timestamp: string;
   error?: string;
@@ -73,7 +69,7 @@ function PrinterMonitorContent() {
       setIsLoading(true);
       const response = await fetch(`/api/admin/printer-status?t=${Date.now()}`);
       const data = await response.json();
-      
+
       // Ensure data has the expected structure
       if (data && data.success !== undefined) {
         setStatus(data);
@@ -88,8 +84,7 @@ function PrinterMonitorContent() {
             queue: data?.printerApi?.queue || { total: 0, pending: 0, jobs: [] }
           },
           funPrinting: {
-            printerHealth: data?.funPrinting?.printerHealth || { available: false, message: 'Unknown status' },
-            retryQueue: data?.funPrinting?.retryQueue || { total: 0, jobs: [] }
+            printerHealth: data?.funPrinting?.printerHealth || { available: false, message: 'Unknown status' }
           },
           timestamp: new Date().toISOString(),
           error: 'Unexpected response format'
@@ -106,8 +101,7 @@ function PrinterMonitorContent() {
           queue: { total: 0, pending: 0, jobs: [] }
         },
         funPrinting: {
-          printerHealth: { available: false, message: 'Error fetching status' },
-          retryQueue: { total: 0, jobs: [] }
+          printerHealth: { available: false, message: 'Error fetching status' }
         },
         timestamp: new Date().toISOString(),
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -206,9 +200,8 @@ function PrinterMonitorContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Printer API Status</p>
-                    <p className={`text-2xl font-bold mt-2 flex items-center gap-2 ${
-                      status.printerApi?.health?.status === 'healthy' ? 'text-green-600' : 'text-red-600'
-                    }`}>
+                    <p className={`text-2xl font-bold mt-2 flex items-center gap-2 ${status.printerApi?.health?.status === 'healthy' ? 'text-green-600' : 'text-red-600'
+                      }`}>
                       {status.printerApi?.health?.status === 'healthy' ? (
                         <>
                           <CheckIcon size={24} className="w-6 h-6" />
@@ -256,19 +249,6 @@ function PrinterMonitorContent() {
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Retry Queue</p>
-                    <p className="text-2xl font-bold text-orange-600 mt-2">
-                      {status.funPrinting?.retryQueue?.total || 0}
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    <RefreshIcon size={32} className="w-8 h-8" />
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Printer API Details */}
@@ -291,9 +271,8 @@ function PrinterMonitorContent() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Status:</span>
-                        <span className={`text-sm font-medium ${
-                          status.printerApi?.health?.status === 'healthy' ? 'text-green-600' : 'text-red-600'
-                        }`}>
+                        <span className={`text-sm font-medium ${status.printerApi?.health?.status === 'healthy' ? 'text-green-600' : 'text-red-600'
+                          }`}>
                           {status.printerApi?.health?.status === 'healthy' ? 'Healthy' : 'Unhealthy'}
                         </span>
                       </div>
@@ -306,9 +285,8 @@ function PrinterMonitorContent() {
                         <>
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-gray-600">Available:</span>
-                            <span className={`text-sm font-medium ${
-                              status.printerApi.health.printer.available ? 'text-green-600' : 'text-red-600'
-                            }`}>
+                            <span className={`text-sm font-medium ${status.printerApi.health.printer.available ? 'text-green-600' : 'text-red-600'
+                              }`}>
                               {status.printerApi.health.printer.available ? 'Yes' : 'No'}
                             </span>
                           </div>
@@ -334,9 +312,9 @@ function PrinterMonitorContent() {
             <div className="bg-white rounded-lg shadow border border-gray-200">
               <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
                 <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Print Queue ({status.printerApi?.queue?.pending || 0} pending)
-                </h2>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Print Queue ({status.printerApi?.queue?.pending || 0} pending)
+                  </h2>
                   {status.printerApi?.queue?.isPaused && (
                     <p className="text-sm text-yellow-600 mt-1 flex items-center gap-1">
                       <PauseIcon size={16} className="w-4 h-4" />
@@ -442,7 +420,7 @@ function PrinterMonitorContent() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {job.job.orderId ? (
-                              <a 
+                              <a
                                 href={`/admin/orders/${job.job.orderId}`}
                                 className="text-blue-600 hover:text-blue-800 underline font-medium"
                               >
@@ -469,9 +447,8 @@ function PrinterMonitorContent() {
                             {job.job.deliveryNumber}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              job.attempts > 3 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
-                            }`}>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${job.attempts > 3 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
+                              }`}>
                               {job.attempts}
                             </span>
                           </td>
@@ -521,30 +498,6 @@ function PrinterMonitorContent() {
               </div>
             </div>
 
-            {/* Retry Queue (funPrinting) */}
-            {status.funPrinting?.retryQueue && status.funPrinting.retryQueue.total > 0 && (
-              <div className="bg-white rounded-lg shadow border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-200 bg-orange-50">
-                  <h2 className="text-xl font-semibold text-orange-900">
-                    Retry Queue ({status.funPrinting.retryQueue.total} jobs)
-                  </h2>
-                  <p className="text-sm text-orange-700 mt-1">
-                    Jobs waiting to be sent to printer API
-                  </p>
-                </div>
-                <div className="p-6">
-                  <div className="space-y-2">
-                    {status.funPrinting.retryQueue.jobs?.map((job: any, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                        <span className="text-sm text-gray-600">
-                          Queued at: {formatDate(job.timestamp.toString())}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Last Updated */}
             <div className="text-center text-sm text-gray-500">

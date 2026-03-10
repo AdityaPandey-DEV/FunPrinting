@@ -56,14 +56,13 @@ export interface PrintJobResponse {
 }
 
 /**
- * Printer API Client with infinite retry logic
+ * Printer API Client
  */
 export class PrinterClient {
   private apiUrls: string[];
   private apiKey: string;
   private timeout: number;
-  private retryQueue: Array<{ request: PrintJobRequest; timestamp: Date }> = [];
-  private isProcessingQueue = false;
+
 
   constructor() {
     // Parse PRINTER_API_URLS from environment
@@ -98,7 +97,7 @@ export class PrinterClient {
           this.apiUrls = [trimmed];
         }
       }
-      
+
       // Normalize all URLs: remove trailing slashes
       this.apiUrls = this.apiUrls.map(url => url.replace(/\/+$/, ''));
     }
@@ -106,8 +105,7 @@ export class PrinterClient {
     this.apiKey = process.env.PRINTER_API_KEY || '';
     this.timeout = parseInt(process.env.PRINTER_API_TIMEOUT || '5000', 10);
 
-    // Start processing retry queue
-    this.startRetryQueueProcessor();
+
   }
 
   /**
@@ -135,7 +133,7 @@ export class PrinterClient {
       const status = error.response.status;
       const statusText = error.response.statusText;
       const responseData = error.response.data;
-      
+
       // Try to extract error message from response data
       let errorMessage = '';
       if (responseData) {
@@ -147,7 +145,7 @@ export class PrinterClient {
           errorMessage = responseData.message;
         }
       }
-      
+
       // Build comprehensive error message
       if (errorMessage) {
         return `${status} ${statusText}: ${errorMessage}`;
@@ -155,7 +153,7 @@ export class PrinterClient {
         return `${status} ${statusText}`;
       }
     }
-    
+
     // Fall back to error message or default
     return error.message || 'Unknown error';
   }
@@ -180,8 +178,6 @@ export class PrinterClient {
 
     if (!printerUrl) {
       console.error('No printer API URL available');
-      // Add to retry queue
-      this.addToRetryQueue(request);
       return {
         success: false,
         message: 'No printer API available',
@@ -249,10 +245,7 @@ export class PrinterClient {
           error: response.data?.error,
           data: response.data
         });
-        
-        // Add to retry queue
-        this.addToRetryQueue(request);
-        
+
         return {
           success: false,
           message: 'Printer API returned unsuccessful response',
@@ -268,7 +261,7 @@ export class PrinterClient {
       const statusCode = error.response?.status;
       const statusText = error.response?.statusText;
       const responseData = error.response?.data;
-      
+
       // Log full error details
       console.error(`❌ Error sending print job to ${printerUrl}:`, {
         message: errorMessage,
@@ -277,77 +270,13 @@ export class PrinterClient {
         responseData: responseData,
         error: error.message
       });
-      
-      // Add to retry queue (infinite retry)
-      this.addToRetryQueue(request);
 
       return {
         success: false,
-        message: 'Failed to send print job, added to retry queue',
+        message: 'Failed to send print job',
         error: errorMessage
       };
     }
-  }
-
-  /**
-   * Add request to retry queue
-   */
-  private addToRetryQueue(request: PrintJobRequest): void {
-    this.retryQueue.push({
-      request,
-      timestamp: new Date()
-    });
-    console.log(`📋 Added print job to retry queue (Total: ${this.retryQueue.length})`);
-  }
-
-  /**
-   * Start processing retry queue
-   */
-  private startRetryQueueProcessor(): void {
-    setInterval(async () => {
-      if (this.isProcessingQueue || this.retryQueue.length === 0) {
-        return;
-      }
-
-      this.isProcessingQueue = true;
-      console.log(`🔄 Processing retry queue (${this.retryQueue.length} jobs)...`);
-
-      const jobs = [...this.retryQueue];
-      this.retryQueue = [];
-
-      for (const { request } of jobs) {
-        try {
-          // Check if job was already successfully sent (prevent duplicates)
-          // If orderId exists, we can check if it's already in the printer queue
-          const result = await this.sendPrintJob(request);
-          if (result.success) {
-            // Job sent successfully, don't add back to retry queue
-            console.log(`✅ Retry successful for job: ${request.orderId || 'unknown'}`);
-          } else {
-            // Only add back to queue if it's a genuine failure
-            // Check if error indicates job is already in queue
-            const errorMsg = result.error?.toLowerCase() || '';
-            if (!errorMsg.includes('duplicate') && !errorMsg.includes('already')) {
-            this.addToRetryQueue(request);
-            } else {
-              console.log(`⏭️ Skipping duplicate job in retry queue: ${request.orderId || 'unknown'}`);
-            }
-          }
-        } catch (error) {
-          console.error('Error processing retry queue job:', error);
-          // Only add back if it's not a duplicate error
-          const errorMsg = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-          if (!errorMsg.includes('duplicate') && !errorMsg.includes('already')) {
-          this.addToRetryQueue(request);
-          }
-        }
-
-        // Small delay between retries
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-
-      this.isProcessingQueue = false;
-    }, 30000); // Process queue every 30 seconds
   }
 
   /**
@@ -368,16 +297,6 @@ export class PrinterClient {
       return { available: false, message: error.message || 'Health check failed' };
     }
   }
-
-  /**
-   * Get retry queue status
-   */
-  getRetryQueueStatus(): { total: number; jobs: Array<{ timestamp: Date }> } {
-    return {
-      total: this.retryQueue.length,
-      jobs: this.retryQueue.map(item => ({ timestamp: item.timestamp }))
-    };
-  }
 }
 
 // Export singleton instance
@@ -395,7 +314,7 @@ export function generateDeliveryNumber(printerIndex: number): string {
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
   const dateStr = `${year}${month}${day}`;
-  
+
   // Start with 'A' for now - actual letter cycling and file number are handled by printer API
   // The printer API will generate the full delivery number with file number
   return `A${dateStr}${printerIndex}0`; // Placeholder - printer API will replace with actual file number
@@ -406,7 +325,7 @@ function getFileTypeFromURL(url: string, fileName: string): string {
   // Try to get extension from filename first
   const fileNameLower = fileName.toLowerCase();
   const urlLower = url.toLowerCase();
-  
+
   // Extract extension from filename
   const fileNameMatch = fileNameLower.match(/\.([a-z0-9]+)$/);
   if (fileNameMatch) {
@@ -432,12 +351,12 @@ function getFileTypeFromURL(url: string, fileName: string): string {
       'txt': 'text/plain',
       'rtf': 'application/rtf',
     };
-    
+
     if (mimeTypes[ext]) {
       return mimeTypes[ext];
     }
   }
-  
+
   // Try to get extension from URL
   const urlMatch = urlLower.match(/\.([a-z0-9]+)(\?|$)/);
   if (urlMatch) {
@@ -454,12 +373,12 @@ function getFileTypeFromURL(url: string, fileName: string): string {
       'doc': 'application/msword',
       'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     };
-    
+
     if (mimeTypes[ext]) {
       return mimeTypes[ext];
     }
   }
-  
+
   // Default fallback
   return 'application/octet-stream';
 }
@@ -512,7 +431,7 @@ export async function sendPrintJobFromOrder(order: IOrder, printerIndex: number)
   // Check for multiple files first, then fall back to single file
   const hasMultipleFiles = Array.isArray(order.fileURLs) && order.fileURLs.length > 0;
   const hasSingleFile = order.fileURL && !hasMultipleFiles;
-  
+
   if (!hasMultipleFiles && !hasSingleFile) {
     return {
       success: false,
@@ -527,13 +446,13 @@ export async function sendPrintJobFromOrder(order: IOrder, printerIndex: number)
     const originalFileNames = Array.isArray(order.originalFileNames)
       ? order.originalFileNames
       : fileURLs.map((_, idx) => `File ${idx + 1}`);
-    
+
     console.log(`📋 Preparing print job for ${fileURLs.length} files:`, {
       fileURLs,
       originalFileNames,
       orderId: order.orderId
     });
-    
+
     // Detect file types for each file
     const fileTypes = fileURLs.map((url, idx) => {
       const fileName = originalFileNames[idx] || `File ${idx + 1}`;
@@ -542,10 +461,10 @@ export async function sendPrintJobFromOrder(order: IOrder, printerIndex: number)
 
     // Prepare service options per file
     const serviceOptions: Array<{ fileName: string; options: string[] }> = [];
-    const serviceOptionsArray = Array.isArray(order.printingOptions.serviceOptions) 
-      ? order.printingOptions.serviceOptions 
+    const serviceOptionsArray = Array.isArray(order.printingOptions.serviceOptions)
+      ? order.printingOptions.serviceOptions
       : (order.printingOptions.serviceOption ? [order.printingOptions.serviceOption] : []);
-    
+
     // If serviceOptions is per-file array, map each file
     if (Array.isArray(order.printingOptions.serviceOptions) && order.printingOptions.serviceOptions.length === fileURLs.length) {
       originalFileNames.forEach((fileName, idx) => {
@@ -626,13 +545,13 @@ export async function sendPrintJobFromOrder(order: IOrder, printerIndex: number)
 
   // Legacy: single file format (backward compatibility)
   const fileName = order.originalFileName || 'document.pdf';
-  
+
   // Prepare service options for single file
   const serviceOptions: Array<{ fileName: string; options: string[] }> = [];
-  const serviceOptionsArray = Array.isArray(order.printingOptions.serviceOptions) 
-    ? order.printingOptions.serviceOptions 
+  const serviceOptionsArray = Array.isArray(order.printingOptions.serviceOptions)
+    ? order.printingOptions.serviceOptions
     : (order.printingOptions.serviceOption ? [order.printingOptions.serviceOption] : []);
-  
+
   serviceOptions.push({
     fileName,
     options: serviceOptionsArray.length > 0 ? serviceOptionsArray : []

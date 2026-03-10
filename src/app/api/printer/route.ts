@@ -49,9 +49,9 @@ export async function POST(request: NextRequest) {
     if (!order.orderType) {
       console.error('❌ Order is missing required field: orderType');
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Order is missing required field: orderType. Cannot create order summary without order type.' 
+        {
+          success: false,
+          error: 'Order is missing required field: orderType. Cannot create order summary without order type.'
         },
         { status: 400 }
       );
@@ -62,9 +62,9 @@ export async function POST(request: NextRequest) {
     if (!hasCustomerInfo && !hasStudentInfo) {
       console.error('❌ Order is missing required field: customerInfo or studentInfo');
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Order is missing required field: customerInfo or studentInfo. Cannot create order summary without customer information.' 
+        {
+          success: false,
+          error: 'Order is missing required field: customerInfo or studentInfo. Cannot create order summary without customer information.'
         },
         { status: 400 }
       );
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     // Check if order has file(s) - support both single file and multiple files
     const hasMultipleFiles = order.fileURLs && order.fileURLs.length > 0;
     const hasSingleFile = order.fileURL && !hasMultipleFiles;
-    
+
     if (!hasMultipleFiles && !hasSingleFile) {
       return NextResponse.json(
         { success: false, error: 'Order has no file to print' },
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
           printerUrls = [trimmed];
         }
       }
-      
+
       // Normalize all URLs: remove trailing slashes
       printerUrls = printerUrls.map(url => url.replace(/\/+$/, ''));
     }
@@ -172,12 +172,10 @@ export async function GET(request: NextRequest) {
 
     const printerClient = (await import('@/lib/printerClient')).printerClient;
     const health = await printerClient.checkHealth(printerIndex);
-    const queueStatus = printerClient.getRetryQueueStatus();
 
     return NextResponse.json({
       success: true,
-      printer: health,
-      retryQueue: queueStatus
+      printer: health
     });
   } catch (error) {
     console.error('Error getting printer status:', error);
