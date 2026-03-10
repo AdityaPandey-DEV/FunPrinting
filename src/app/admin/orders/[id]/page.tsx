@@ -95,7 +95,7 @@ interface Order {
     };
   };
   paymentStatus: 'pending' | 'completed' | 'failed';
-  orderStatus: 'pending' | 'processing' | 'printing' | 'dispatched' | 'delivered';
+  orderStatus: 'pending' | 'processing' | 'printing' | 'printed' | 'dispatched' | 'delivered';
   amount: number;
   expectedDate?: string | Date;
   createdAt: string;
@@ -282,6 +282,10 @@ function OrderDetailPageContent() {
     }
   };
 
+  const markAsPrinted = async () => {
+    await updateOrderStatus('printed');
+  };
+
   const deleteOrder = async () => {
     if (!order) return;
 
@@ -393,6 +397,7 @@ function OrderDetailPageContent() {
                 <option value="pending">Pending</option>
                 <option value="processing">Processing</option>
                 <option value="printing">Printing</option>
+                <option value="printed">Printed</option>
                 <option value="dispatched">Dispatched</option>
                 <option value="delivered">Delivered</option>
               </select>
@@ -421,6 +426,7 @@ function OrderDetailPageContent() {
           onSendToPrintQueue={sendToPrintQueue}
           onDeleteOrder={deleteOrder}
           onShipOrder={shipOrder}
+          onMarkAsPrinted={markAsPrinted}
         />
       </div>
     </div>

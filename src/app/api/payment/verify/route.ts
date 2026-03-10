@@ -10,7 +10,7 @@ import { sendInvoiceEmail } from '@/lib/invoiceEmail';
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
-    
+
     const body = await request.json();
     const {
       razorpay_order_id,
@@ -39,13 +39,13 @@ export async function POST(request: NextRequest) {
 
     if (!isValid) {
       console.error('❌ Invalid payment signature - attempting fallback verification');
-      
+
       // Fallback: Check payment status from Razorpay API if signature verification fails
       // This handles cases where signature might be corrupted during transmission
       try {
         const { checkSpecificOrderFromRazorpay } = await import('@/lib/razorpayFallback');
         const fallbackResult = await checkSpecificOrderFromRazorpay(razorpay_order_id);
-        
+
         if (fallbackResult) {
           console.log('✅ Payment verified via fallback API check');
           // Fetch updated order
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       } catch (fallbackError) {
         console.error('❌ Fallback verification also failed:', fallbackError);
       }
-      
+
       return NextResponse.json(
         { success: false, error: 'Invalid payment signature. Please contact support if payment was deducted.' },
         { status: 400 }
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     // Find the existing pending order
     const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
-    
+
     if (!order) {
       console.error('❌ Order not found for Razorpay order ID:', razorpay_order_id);
       return NextResponse.json(
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     // Check if order is already processed (race condition protection)
     if (order.paymentStatus === 'completed' && order.razorpayPaymentId === razorpay_payment_id) {
       console.log(`ℹ️ Order ${order.orderId} already processed for payment ${razorpay_payment_id}`);
-      
+
       // Even if payment is already completed, check if print job needs to be sent
       if (order.orderType === 'file' && order.fileURL) {
         try {
@@ -120,15 +120,15 @@ export async function POST(request: NextRequest) {
             printerUrls = printerUrls.map(url => url.replace(/\/+$/, ''));
           }
           const printerIndex = printerUrls.length > 0 ? 1 : 1;
-          
+
           // Check if print job was already sent by checking delivery number or print job status
           const PrintJob = (await import('@/models/PrintJob')).default;
           const existingPrintJob = await PrintJob.findOne({ orderId: order._id.toString() });
-          
+
           if (!existingPrintJob || existingPrintJob.status === 'pending') {
             console.log(`🖨️ Payment already completed, but sending print job for order: ${order.orderId}`);
             const printJobResult = await sendPrintJobFromOrder(order, printerIndex);
-            
+
             if (printJobResult.success && printJobResult.deliveryNumber) {
               await Order.findByIdAndUpdate(order._id, {
                 $set: { deliveryNumber: printJobResult.deliveryNumber }
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
           console.error('❌ Error sending print job for already-completed order:', printJobError);
         }
       }
-      
+
       return NextResponse.json({
         success: true,
         message: 'Payment already verified',
@@ -155,8 +155,8 @@ export async function POST(request: NextRequest) {
 
     // Update order with payment details using atomic operation
     const updateResult = await Order.findOneAndUpdate(
-      { 
-        _id: order._id, 
+      {
+        _id: order._id,
         paymentStatus: { $ne: 'completed' } // Only update if not already completed
       },
       {
@@ -188,14 +188,14 @@ export async function POST(request: NextRequest) {
     console.log(`✅ Order ${order.orderId} marked as paid`);
 
     // Create CreatorEarning record for paid template orders
-    if (updateResult.orderType === 'template' && 
-        updateResult.creatorShareAmount && 
-        updateResult.creatorShareAmount > 0 && 
-        updateResult.templateCreatorUserId) {
+    if (updateResult.orderType === 'template' &&
+      updateResult.creatorShareAmount &&
+      updateResult.creatorShareAmount > 0 &&
+      updateResult.templateCreatorUserId) {
       try {
         // Check if earning already exists (idempotency)
         const existingEarning = await CreatorEarning.findOne({ orderId: updateResult.orderId });
-        
+
         if (!existingEarning) {
           const earning = new CreatorEarning({
             creatorUserId: updateResult.templateCreatorUserId,
@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
             platformShareAmount: updateResult.platformShareAmount || 0,
             status: 'pending',
           });
-          
+
           await earning.save();
           console.log(`💰 CreatorEarning created: ₹${updateResult.creatorShareAmount} for creator ${updateResult.templateCreatorUserId}`);
         } else {
@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
     // Generate delivery number and send print job
     let deliveryNumber = updateResult.deliveryNumber;
     let printJobResult = null;
-    
+
     // Determine printer index from PRINTER_API_URLS array
     let printerUrls: string[] = [];
     const urlsEnv = process.env.PRINTER_API_URLS;
@@ -252,7 +252,7 @@ export async function POST(request: NextRequest) {
           printerUrls = [trimmed];
         }
       }
-      
+
       // Normalize all URLs: remove trailing slashes
       printerUrls = printerUrls.map(url => url.replace(/\/+$/, ''));
     }
@@ -273,21 +273,22 @@ export async function POST(request: NextRequest) {
       try {
         console.log(`🖨️ Sending print job to printer API for order: ${updateResult.orderId}`);
         printJobResult = await sendPrintJobFromOrder(updateResult, printerIndex);
-        
-        if (printJobResult.success && printJobResult.deliveryNumber) {
-          // Update delivery number from printer API response
-          deliveryNumber = printJobResult.deliveryNumber;
-          await Order.findByIdAndUpdate(updateResult._id, {
-            $set: { deliveryNumber }
-          });
-          console.log(`✅ Print job sent successfully. Delivery number: ${deliveryNumber}`);
+
+        if (printJobResult.success) {
+          // Update order status to 'printing' and delivery number
+          const updateFields: any = { orderStatus: 'printing', status: 'printing' };
+          if (printJobResult.deliveryNumber) {
+            deliveryNumber = printJobResult.deliveryNumber;
+            updateFields.deliveryNumber = deliveryNumber;
+          }
+          await Order.findByIdAndUpdate(updateResult._id, { $set: updateFields });
+          console.log(`✅ Print job sent successfully. Order status updated to 'printing'. Delivery number: ${deliveryNumber}`);
         } else {
-          console.warn(`⚠️ Print job queued but may have failed: ${printJobResult.message}`);
-          // Job is in retry queue, will be processed later
+          console.warn(`⚠️ Print job failed: ${printJobResult.message}. Order stays as 'pending' for manual printing.`);
         }
       } catch (printJobError) {
         console.error('❌ Error sending print job:', printJobError);
-        // Don't fail the order if print job fails - it will be retried
+        // Don't fail the order if print job fails - admin can manually print later
       }
     }
 
@@ -295,7 +296,7 @@ export async function POST(request: NextRequest) {
     try {
       console.log(`📧 Sending invoice email for order: ${updateResult.orderId}`);
       const invoiceSent = await sendInvoiceEmail(updateResult, deliveryNumber);
-      
+
       if (invoiceSent) {
         console.log(`✅ Invoice email sent successfully to ${updateResult.customerInfo.email}`);
       } else {
@@ -318,7 +319,7 @@ export async function POST(request: NextRequest) {
           printJob = existingPrintJob;
         } else {
           console.log('🖨️ Creating print job record for order:', updateResult.orderId);
-          
+
           // Calculate estimated duration
           const estimatedDuration = Math.ceil(
             ((updateResult.printingOptions.pageCount || 1) * updateResult.printingOptions.copies * 0.5) + // 0.5 minutes per page
@@ -367,17 +368,17 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('❌ Error verifying payment:', error);
-    
+
     // Enhanced error handling with specific error messages
     let errorMessage = 'Failed to verify payment and create order';
     let statusCode = 500;
-    
+
     if (error instanceof Error) {
       // Network/timeout errors
       if (error.message.includes('timeout') || error.message.includes('ETIMEDOUT') || error.message.includes('ECONNRESET')) {
         errorMessage = 'Payment verification timed out. Your payment may still be processing. Please check your order status in a few minutes or contact support.';
         statusCode = 504;
-      } 
+      }
       // Database errors
       else if (error.message.includes('E11000') || error.message.includes('duplicate')) {
         errorMessage = 'Order already processed. Please check your order status.';
@@ -393,14 +394,14 @@ export async function POST(request: NextRequest) {
         errorMessage = 'Unable to connect to payment service. Please try again later.';
         statusCode = 503;
       }
-      
+
       console.error(`❌ Payment verification error details: ${error.message}`);
     }
-    
+
     // Attempt fallback verification for timeout/network errors
     // Note: We can't re-read request body here, so fallback is handled at client side
     // The payment status check API should be called by the client as fallback
-    
+
     return NextResponse.json(
       { success: false, error: errorMessage },
       { status: statusCode }

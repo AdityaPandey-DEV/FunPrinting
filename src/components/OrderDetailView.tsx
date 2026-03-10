@@ -32,6 +32,7 @@ export interface OrderDetailViewProps {
   onSendToPrintQueue?: () => void;
   onDeleteOrder?: () => void;
   onShipOrder?: () => void;
+  onMarkAsPrinted?: () => void;
 }
 
 // Helper function to detect file type from URL or filename
@@ -105,6 +106,7 @@ export function OrderDetailView(props: OrderDetailViewProps) {
     onSendToPrintQueue,
     onDeleteOrder,
     onShipOrder,
+    onMarkAsPrinted,
   } = props;
 
   if (!order) {
@@ -1065,6 +1067,17 @@ export function OrderDetailView(props: OrderDetailViewProps) {
               >
                 {isUpdating ? 'Updating...' : 'Mark as Printing'}
               </button>
+
+              {onMarkAsPrinted && (
+                <button
+                  onClick={onMarkAsPrinted}
+                  disabled={order.orderStatus !== 'printing' || isUpdating}
+                  className="w-full bg-teal-600 text-white px-4 py-2.5 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
+                >
+                  <CheckIcon size={16} className="w-4 h-4" />
+                  {isUpdating ? 'Updating...' : '✅ Mark as Printed'}
+                </button>
+              )}
 
               <button
                 onClick={() => onUpdateStatus('dispatched')}

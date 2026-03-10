@@ -54,8 +54,8 @@ export interface IOrder {
     }>;
   };
   paymentStatus: 'pending' | 'completed' | 'failed';
-  orderStatus: 'pending' | 'processing' | 'printing' | 'dispatched' | 'delivered';
-  status: 'pending_payment' | 'paid' | 'processing' | 'printing' | 'dispatched' | 'delivered' | 'cancelled' | 'refunded';
+  orderStatus: 'pending' | 'processing' | 'printing' | 'printed' | 'dispatched' | 'delivered';
+  status: 'pending_payment' | 'paid' | 'processing' | 'printing' | 'printed' | 'dispatched' | 'delivered' | 'cancelled' | 'refunded';
   amount: number;
   deliveryOption: {
     type: 'pickup' | 'delivery';
@@ -97,6 +97,7 @@ export interface IOrder {
   templateCreatorUserId?: string; // Reference to template creator user ID (string for simplicity)
   expectedDate?: Date;
   deliveryNumber?: string; // Format: {LETTER}{YYYYMMDD}{PRINTER_INDEX}
+  printedAt?: Date; // When printing was completed
   // Shiprocket delivery tracking fields
   shiprocket?: {
     orderId?: number;        // Shiprocket's order ID
@@ -197,12 +198,12 @@ const orderSchema = new mongoose.Schema<IOrder>({
   },
   orderStatus: {
     type: String,
-    enum: ['pending', 'processing', 'printing', 'dispatched', 'delivered'],
+    enum: ['pending', 'processing', 'printing', 'printed', 'dispatched', 'delivered'],
     default: 'pending',
   },
   status: {
     type: String,
-    enum: ['pending_payment', 'paid', 'processing', 'printing', 'dispatched', 'delivered', 'cancelled', 'refunded'],
+    enum: ['pending_payment', 'paid', 'processing', 'printing', 'printed', 'dispatched', 'delivered', 'cancelled', 'refunded'],
     default: 'pending_payment',
   },
   amount: {
@@ -284,6 +285,7 @@ const orderSchema = new mongoose.Schema<IOrder>({
     }
   },
   deliveryNumber: String, // Format: {LETTER}{YYYYMMDD}{PRINTER_INDEX}
+  printedAt: Date, // When printing was completed
   // Shiprocket delivery tracking
   shiprocket: {
     orderId: Number,

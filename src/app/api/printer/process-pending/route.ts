@@ -61,7 +61,7 @@ export async function POST(_request: NextRequest) {
       try {
         // Check if print job already exists and is not pending
         const existingPrintJob = await PrintJob.findOne({ orderId: order._id.toString() });
-        
+
         if (existingPrintJob && existingPrintJob.status !== 'pending') {
           console.log(`⏭️ Skipping order ${order.orderId} - print job already exists with status: ${existingPrintJob.status}`);
           results.skipped++;
@@ -85,7 +85,7 @@ export async function POST(_request: NextRequest) {
         // Check if print job was already sent (prevent duplicates)
         // The printer-api deduplication should handle this, but we check here too
         console.log(`🖨️ Processing print job for order: ${order.orderId}`);
-        
+
         // Only send if order hasn't been processed yet
         if (existingPrintJob && existingPrintJob.status === 'completed') {
           console.log(`⏭️ Skipping order ${order.orderId} - already completed`);
@@ -101,12 +101,12 @@ export async function POST(_request: NextRequest) {
         const printJobResult = await sendPrintJobFromOrder(order, printerIndex);
 
         if (printJobResult.success) {
-          // Update delivery number from printer API response if provided
+          // Update order status to 'printing' and delivery number
+          const updateFields: any = { orderStatus: 'printing', status: 'printing' };
           if (printJobResult.deliveryNumber) {
-            await Order.findByIdAndUpdate(order._id, {
-              $set: { deliveryNumber: printJobResult.deliveryNumber }
-            });
+            updateFields.deliveryNumber = printJobResult.deliveryNumber;
           }
+          await Order.findByIdAndUpdate(order._id, { $set: updateFields });
 
           // Create or update print job record
           if (!existingPrintJob) {

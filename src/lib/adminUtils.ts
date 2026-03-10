@@ -10,6 +10,8 @@ export const getStatusColor = (status: string) => {
       return 'bg-orange-100 text-orange-800 border-orange-300';
     case 'printing':
       return 'bg-blue-100 text-blue-800 border-blue-300';
+    case 'printed':
+      return 'bg-teal-100 text-teal-800 border-teal-300';
     case 'dispatched':
       return 'bg-purple-100 text-purple-800 border-purple-300';
     case 'delivered':
@@ -64,7 +66,7 @@ export const getOrderPaymentStatusColor = (status: string) => {
 
 export const formatDate = (dateString: string, format: 'short' | 'long' = 'short') => {
   const date = new Date(dateString);
-  
+
   if (format === 'long') {
     return date.toLocaleDateString('en-IN', {
       year: 'numeric',
@@ -74,7 +76,7 @@ export const formatDate = (dateString: string, format: 'short' | 'long' = 'short
       minute: '2-digit',
     });
   }
-  
+
   return date.toLocaleDateString('en-IN', {
     year: 'numeric',
     month: 'short',
