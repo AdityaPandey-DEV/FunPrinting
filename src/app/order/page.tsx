@@ -3537,109 +3537,6 @@ function OrderPageContent() {
                     </div>
                   )}
 
-                  {/* Delivery Speed Options */}
-                  <div className="mt-6">
-                    <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                      ⚡ Delivery Speed
-                    </label>
-                    {isFetchingRate ? (
-                      <div className="flex items-center gap-2 text-sm text-gray-500 py-4">
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
-                        Fetching delivery rates...
-                      </div>
-                    ) : deliveryRateInfo?.tiers && deliveryRateInfo.tiers.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {deliveryRateInfo.tiers.map((tier: { id: string; label: string; description: string; emoji: string; deliveryCharge: number; estimatedDays: number; courierName: string }) => {
-                          const isSelected = deliverySpeed === tier.id;
-                          const colorMap: Record<string, { border: string; bg: string; ring: string; hover: string; text: string; checkBg: string }> = {
-                            standard: { border: 'border-green-500', bg: 'bg-green-50', ring: 'ring-green-200', hover: 'hover:border-green-300', text: 'text-green-600', checkBg: 'bg-green-500' },
-                            express: { border: 'border-blue-500', bg: 'bg-blue-50', ring: 'ring-blue-200', hover: 'hover:border-blue-300', text: 'text-blue-600', checkBg: 'bg-blue-500' },
-                            sameday: { border: 'border-purple-500', bg: 'bg-purple-50', ring: 'ring-purple-200', hover: 'hover:border-purple-300', text: 'text-purple-600', checkBg: 'bg-purple-500' },
-                          };
-                          const colors = colorMap[tier.id] || colorMap.standard;
-
-                          return (
-                            <button
-                              key={tier.id}
-                              type="button"
-                              onClick={() => {
-                                setDeliverySpeed(tier.id as 'standard' | 'sameday');
-                                // Set expected date based on tier
-                                const d = new Date();
-                                d.setDate(d.getDate() + (tier.estimatedDays || 5));
-                                setExpectedDate(d.toISOString().split('T')[0]);
-                                // Update delivery charge to this tier's charge
-                                setDeliveryOption((prev: DeliveryOption) => ({ ...prev, deliveryCharge: tier.deliveryCharge }));
-                              }}
-                              className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 ${isSelected
-                                ? `${colors.border} ${colors.bg} ring-2 ${colors.ring} shadow-md`
-                                : `border-gray-200 bg-white ${colors.hover} hover:shadow-sm`
-                                }`}
-                            >
-                              {isSelected && (
-                                <div className={`absolute -top-2 -right-2 ${colors.checkBg} text-white rounded-full w-5 h-5 flex items-center justify-center text-xs`}>✓</div>
-                              )}
-                              {tier.id === 'sameday' && (
-                                <span className="absolute -top-2 left-3 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">EXPRESS</span>
-                              )}
-                              <div className="text-xl mb-1">{tier.emoji}</div>
-                              <div className="font-semibold text-gray-800 text-sm">{tier.label}</div>
-                              <div className="text-xs text-gray-500">{tier.description}</div>
-                              <div className={`mt-2 text-sm font-bold ${colors.text}`}>
-                                ₹{tier.deliveryCharge}
-                              </div>
-                              <div className="text-[10px] text-gray-400 mt-0.5">via {tier.courierName}</div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {/* Placeholder cards when no rates fetched */}
-                        {(['standard', 'express', 'sameday'] as const).map((speed) => {
-                          const info = {
-                            standard: { emoji: '📦', label: 'Standard', desc: '3-5 business days', color: 'green' },
-                            express: { emoji: '🚀', label: 'Express', desc: '1-2 business days', color: 'blue' },
-                            sameday: { emoji: '⚡', label: 'Same Day', desc: 'Within 4-6 hours', color: 'purple' },
-                          }[speed];
-                          const isSelected = deliverySpeed === speed;
-                          return (
-                            <button
-                              key={speed}
-                              type="button"
-                              onClick={() => {
-                                setDeliverySpeed(speed);
-                                const d = new Date();
-                                d.setDate(d.getDate() + (speed === 'sameday' ? 0 : speed === 'express' ? 2 : 5));
-                                setExpectedDate(d.toISOString().split('T')[0]);
-                              }}
-                              className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 ${isSelected
-                                ? `border-${info.color}-500 bg-${info.color}-50 ring-2 ring-${info.color}-200 shadow-md`
-                                : `border-gray-200 bg-white hover:border-${info.color}-300 hover:shadow-sm`
-                                }`}
-                            >
-                              {isSelected && (
-                                <div className={`absolute -top-2 -right-2 bg-${info.color}-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs`}>✓</div>
-                              )}
-                              {speed === 'sameday' && (
-                                <span className="absolute -top-2 left-3 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">EXPRESS</span>
-                              )}
-                              <div className="text-xl mb-1">{info.emoji}</div>
-                              <div className="font-semibold text-gray-800 text-sm">{info.label}</div>
-                              <div className="text-xs text-gray-500">{info.desc}</div>
-                              <div className="mt-2 text-sm font-bold text-gray-400">
-                                Enter PIN for rate
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                    <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
-                      📅 Est. delivery: {expectedDate ? new Date(expectedDate + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Select a speed'}
-                      {deliveryRateInfo?.tiers && deliverySpeed !== 'standard' && <span className="text-orange-600 font-medium"> • Express charges apply</span>}
-                    </p>
-                  </div>
 
                   {/* Order Summary */}
                   <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
@@ -4194,6 +4091,107 @@ function OrderPageContent() {
                               <span className="text-blue-500 mt-0.5">ℹ️</span>
                               <p className="text-xs text-gray-600">
                                 Enter your 6-digit PIN code and City & State will be auto-filled. Delivery charges vary based on your location.
+                              </p>
+                            </div>
+
+                            {/* Delivery Speed Options - shown only for Home Delivery */}
+                            <div className="mt-5">
+                              <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                ⚡ Delivery Speed
+                              </label>
+                              {isFetchingRate ? (
+                                <div className="flex items-center gap-2 text-sm text-gray-500 py-4">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                                  Fetching delivery rates...
+                                </div>
+                              ) : deliveryRateInfo?.tiers && deliveryRateInfo.tiers.length > 0 ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                  {deliveryRateInfo.tiers.map((tier: { id: string; label: string; description: string; emoji: string; deliveryCharge: number; estimatedDays: number; courierName: string }) => {
+                                    const isSelected = deliverySpeed === tier.id;
+                                    const colorMap: Record<string, { border: string; bg: string; ring: string; hover: string; text: string; checkBg: string }> = {
+                                      standard: { border: 'border-green-500', bg: 'bg-green-50', ring: 'ring-green-200', hover: 'hover:border-green-300', text: 'text-green-600', checkBg: 'bg-green-500' },
+                                      express: { border: 'border-blue-500', bg: 'bg-blue-50', ring: 'ring-blue-200', hover: 'hover:border-blue-300', text: 'text-blue-600', checkBg: 'bg-blue-500' },
+                                      sameday: { border: 'border-purple-500', bg: 'bg-purple-50', ring: 'ring-purple-200', hover: 'hover:border-purple-300', text: 'text-purple-600', checkBg: 'bg-purple-500' },
+                                    };
+                                    const colors = colorMap[tier.id] || colorMap.standard;
+
+                                    return (
+                                      <button
+                                        key={tier.id}
+                                        type="button"
+                                        onClick={() => {
+                                          setDeliverySpeed(tier.id as 'standard' | 'sameday');
+                                          const d = new Date();
+                                          d.setDate(d.getDate() + (tier.estimatedDays || 5));
+                                          setExpectedDate(d.toISOString().split('T')[0]);
+                                          setDeliveryOption((prev: DeliveryOption) => ({ ...prev, deliveryCharge: tier.deliveryCharge }));
+                                        }}
+                                        className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 ${isSelected
+                                          ? `${colors.border} ${colors.bg} ring-2 ${colors.ring} shadow-md`
+                                          : `border-gray-200 bg-white ${colors.hover} hover:shadow-sm`
+                                          }`}
+                                      >
+                                        {isSelected && (
+                                          <div className={`absolute -top-2 -right-2 ${colors.checkBg} text-white rounded-full w-5 h-5 flex items-center justify-center text-xs`}>✓</div>
+                                        )}
+                                        {tier.id === 'sameday' && (
+                                          <span className="absolute -top-2 left-3 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">EXPRESS</span>
+                                        )}
+                                        <div className="text-xl mb-1">{tier.emoji}</div>
+                                        <div className="font-semibold text-gray-800 text-sm">{tier.label}</div>
+                                        <div className="text-xs text-gray-500">{tier.description}</div>
+                                        <div className={`mt-2 text-sm font-bold ${colors.text}`}>
+                                          ₹{tier.deliveryCharge}
+                                        </div>
+                                        <div className="text-[10px] text-gray-400 mt-0.5">via {tier.courierName}</div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                  {(['standard', 'express', 'sameday'] as const).map((speed) => {
+                                    const info = {
+                                      standard: { emoji: '📦', label: 'Standard', desc: '3-5 business days', color: 'green' },
+                                      express: { emoji: '🚀', label: 'Express', desc: '1-2 business days', color: 'blue' },
+                                      sameday: { emoji: '⚡', label: 'Same Day', desc: 'Within 4-6 hours', color: 'purple' },
+                                    }[speed];
+                                    const isSelected = deliverySpeed === speed;
+                                    return (
+                                      <button
+                                        key={speed}
+                                        type="button"
+                                        onClick={() => {
+                                          setDeliverySpeed(speed);
+                                          const d = new Date();
+                                          d.setDate(d.getDate() + (speed === 'sameday' ? 0 : speed === 'express' ? 2 : 5));
+                                          setExpectedDate(d.toISOString().split('T')[0]);
+                                        }}
+                                        className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 ${isSelected
+                                          ? `border-${info.color}-500 bg-${info.color}-50 ring-2 ring-${info.color}-200 shadow-md`
+                                          : `border-gray-200 bg-white hover:border-${info.color}-300 hover:shadow-sm`
+                                          }`}
+                                      >
+                                        {isSelected && (
+                                          <div className={`absolute -top-2 -right-2 bg-${info.color}-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs`}>✓</div>
+                                        )}
+                                        {speed === 'sameday' && (
+                                          <span className="absolute -top-2 left-3 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">EXPRESS</span>
+                                        )}
+                                        <div className="text-xl mb-1">{info.emoji}</div>
+                                        <div className="font-semibold text-gray-800 text-sm">{info.label}</div>
+                                        <div className="text-xs text-gray-500">{info.desc}</div>
+                                        <div className="mt-2 text-sm font-bold text-gray-400">
+                                          Enter PIN for rate
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                                📅 Est. delivery: {expectedDate ? new Date(expectedDate + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Select a speed'}
+                                {deliveryRateInfo?.tiers && deliverySpeed !== 'standard' && <span className="text-orange-600 font-medium"> • Express charges apply</span>}
                               </p>
                             </div>
                           </div>

@@ -50,11 +50,11 @@ export async function GET(request: NextRequest) {
           printerUrls = [trimmed];
         }
       }
-      
+
       // Normalize all URLs: remove trailing slashes
       printerUrls = printerUrls.map(url => url.replace(/\/+$/, ''));
     }
-    
+
     if (printerUrls.length === 0) {
       return NextResponse.json({
         success: false,
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
         },
         timeout: 5000
       });
-      
+
       if (queueResponse.data.success) {
         queueStatus = queueResponse.data;
       }
@@ -104,7 +104,6 @@ export async function GET(request: NextRequest) {
 
     // Check printer client health
     printerHealth = await printerClient.checkHealth(printerIndex);
-    const retryQueueStatus = printerClient.getRetryQueueStatus();
 
     return NextResponse.json({
       success: true,
@@ -115,17 +114,16 @@ export async function GET(request: NextRequest) {
         queue: queueStatus
       },
       funPrinting: {
-        printerHealth,
-        retryQueue: retryQueueStatus
+        printerHealth
       },
       timestamp: new Date().toISOString()
     });
   } catch (error) {
     console.error('Error getting printer status:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to get printer status' 
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get printer status'
       },
       { status: 500 }
     );
