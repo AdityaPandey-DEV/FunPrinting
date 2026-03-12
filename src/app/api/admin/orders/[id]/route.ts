@@ -10,7 +10,9 @@ export async function GET(
   try {
     await connectDB();
     const { id } = await context.params;
-    const order = await Order.findById(id);
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+    const query = isObjectId ? { _id: id } : { orderId: id };
+    const order = await Order.findOne(query);
     if (!order) {
       return NextResponse.json(
         { success: false, error: 'Order not found' },
@@ -72,7 +74,9 @@ export async function PATCH(
     }
 
     // Get current order to validate state transition
-    const currentOrder = await Order.findById(id);
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+    const query = isObjectId ? { _id: id } : { orderId: id };
+    const currentOrder = await Order.findOne(query);
     if (!currentOrder) {
       console.log(`❌ Order ${id} not found`);
       return NextResponse.json(
@@ -141,8 +145,8 @@ export async function PATCH(
     if (orderStatus === 'printed') {
       updateFields.printedAt = new Date();
     }
-    const order = await Order.findByIdAndUpdate(
-      id,
+    const order = await Order.findOneAndUpdate(
+      query,
       updateFields,
       { new: true }
     );
@@ -176,8 +180,11 @@ export async function DELETE(
   try {
     await connectDB();
     const { id } = await context.params;
+    
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+    const query = isObjectId ? { _id: id } : { orderId: id };
 
-    const order = await Order.findByIdAndDelete(id);
+    const order = await Order.findOneAndDelete(query);
     if (!order) {
       return NextResponse.json(
         { success: false, error: 'Order not found' },
