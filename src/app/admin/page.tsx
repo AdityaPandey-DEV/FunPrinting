@@ -116,6 +116,9 @@ function AdminDashboardContent() {
   const [isCheckingPayments, setIsCheckingPayments] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
+  const [nameSearch, setNameSearch] = useState<string>('');
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
   const [printingOrders, setPrintingOrders] = useState<Set<string>>(new Set());
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -191,10 +194,21 @@ function AdminDashboardContent() {
     }
   };
 
-  const fetchOrders = async (page: number = currentPage) => {
+  const fetchOrders = async (page: number = currentPage, overrides?: { name?: string; dateFrom?: string; dateTo?: string }) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/admin/orders?page=${page}&limit=${ORDERS_PER_PAGE}&t=${Date.now()}`);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(ORDERS_PER_PAGE),
+        t: String(Date.now()),
+      });
+      const searchName = overrides?.name !== undefined ? overrides.name : nameSearch;
+      const searchDateFrom = overrides?.dateFrom !== undefined ? overrides.dateFrom : dateFrom;
+      const searchDateTo = overrides?.dateTo !== undefined ? overrides.dateTo : dateTo;
+      if (searchName.trim()) params.set('name', searchName.trim());
+      if (searchDateFrom) params.set('dateFrom', searchDateFrom);
+      if (searchDateTo) params.set('dateTo', searchDateTo);
+      const response = await fetch(`/api/admin/orders?${params.toString()}`);
       const data = await response.json();
 
       console.log('🔍 ADMIN PANEL - Received data:', data);
@@ -491,9 +505,53 @@ function AdminDashboardContent() {
               </div>
 
               {/* Filters */}
-              <div className="flex flex-wrap gap-4 items-center">
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium text-gray-700">Order Status:</label>
+              <div className="flex flex-wrap gap-3 items-end">
+                {/* Name Search */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600">Search by Name</label>
+                  <input
+                    type="text"
+                    value={nameSearch}
+                    onChange={(e) => setNameSearch(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { setCurrentPage(1); fetchOrders(1); } }}
+                    placeholder="Customer name..."
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-44"
+                  />
+                </div>
+
+                {/* Date Range */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600">Order Date From</label>
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600">Order Date To</label>
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Search Button */}
+                <button
+                  onClick={() => { setCurrentPage(1); fetchOrders(1); }}
+                  disabled={isLoading}
+                  className="px-4 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  Search
+                </button>
+
+                {/* Status Filter */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600">Order Status</label>
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
@@ -507,8 +565,9 @@ function AdminDashboardContent() {
                   </select>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium text-gray-700">Payment:</label>
+                {/* Payment Filter */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600">Payment</label>
                   <select
                     value={paymentFilter}
                     onChange={(e) => setPaymentFilter(e.target.value)}
@@ -521,16 +580,22 @@ function AdminDashboardContent() {
                   </select>
                 </div>
 
+                {/* Clear Filters */}
                 <button
                   onClick={() => {
                     setStatusFilter('all');
                     setPaymentFilter('all');
+                    setNameSearch('');
+                    setDateFrom('');
+                    setDateTo('');
+                    setCurrentPage(1);
+                    fetchOrders(1, { name: '', dateFrom: '', dateTo: '' });
                   }}
                   className="px-3 py-1 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700 transition-colors"
                 >
                   <span className="flex items-center gap-2">
                     <RefreshIcon size={16} className="w-4 h-4" />
-                    Clear Filters
+                    Clear
                   </span>
                 </button>
               </div>

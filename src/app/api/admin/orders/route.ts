@@ -191,13 +191,41 @@ export async function GET(request: Request) {
     const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
     const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get('limit') || '10')));
     const skip = (page - 1) * limit;
+    const nameSearch = url.searchParams.get('name') || '';
+    const dateFrom = url.searchParams.get('dateFrom') || '';
+    const dateTo = url.searchParams.get('dateTo') || '';
 
     console.log(`🔍 ADMIN API - Fetching orders page ${page} (limit ${limit}) at ${new Date().toISOString()}`);
 
+    // Build search filter
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const searchFilter: Record<string, any> = {};
+
+    if (nameSearch.trim()) {
+      const nameRegex = { $regex: nameSearch.trim(), $options: 'i' };
+      searchFilter.$or = [
+        { 'studentInfo.name': nameRegex },
+        { 'customerInfo.name': nameRegex },
+      ];
+    }
+
+    if (dateFrom || dateTo) {
+      searchFilter.createdAt = {};
+      if (dateFrom) {
+        searchFilter.createdAt.$gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        // Include the entire end day
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        searchFilter.createdAt.$lte = endDate;
+      }
+    }
+
     // Get total count and paginated orders in parallel
     const [totalCount, orders, pendingCount, printingCount, dispatchedCount, paymentPendingCount] = await Promise.all([
-      Order.countDocuments({}),
-      Order.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Order.countDocuments(searchFilter),
+      Order.find(searchFilter).sort({ createdAt: -1 }).skip(skip).limit(limit),
       Order.countDocuments({ orderStatus: 'pending' }),
       Order.countDocuments({ orderStatus: 'printing' }),
       Order.countDocuments({ orderStatus: 'dispatched' }),
