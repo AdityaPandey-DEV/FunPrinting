@@ -26,7 +26,9 @@ export async function POST(
         const { id } = await context.params;
 
         // Get the order
-        const order = await Order.findById(id);
+        const isObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+        const query = isObjectId ? { _id: id } : { orderId: id };
+        const order = await Order.findOne(query);
         if (!order) {
             return NextResponse.json(
                 { success: false, error: 'Order not found' },
@@ -86,8 +88,8 @@ export async function POST(
             updateData['status'] = 'dispatched';
         }
 
-        const updatedOrder = await Order.findByIdAndUpdate(
-            id,
+        const updatedOrder = await Order.findOneAndUpdate(
+            query,
             { $set: updateData },
             { new: true }
         );

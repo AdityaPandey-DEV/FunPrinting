@@ -13,7 +13,9 @@ export async function DELETE(
     console.log(`🗑️ Attempting to delete order with ID: ${orderId}`);
     
     // Find the order
-    const order = await Order.findById(orderId);
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(orderId);
+    const query = isObjectId ? { _id: orderId } : { orderId: orderId };
+    const order = await Order.findOne(query);
     
     if (!order) {
       console.log(`❌ Order not found with ID: ${orderId}`);
@@ -35,7 +37,7 @@ export async function DELETE(
     }
 
     // Delete the order
-    await Order.findByIdAndDelete(orderId);
+    await Order.findOneAndDelete(query);
     
     console.log(`✅ Order ${order.orderId} deleted by user`);
     
@@ -60,10 +62,12 @@ export async function GET(
   try {
     await connectDB();
     
-    const { id: orderId } = await params;
+    const { id: orderIdParam } = await params;
     
     // Find the order
-    const order = await Order.findById(orderId);
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(orderIdParam);
+    const query = isObjectId ? { _id: orderIdParam } : { orderId: orderIdParam };
+    const order = await Order.findOne(query);
     
     if (!order) {
       return NextResponse.json(

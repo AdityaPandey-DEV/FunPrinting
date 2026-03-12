@@ -18,7 +18,9 @@ export async function GET(
         const { id } = await context.params;
 
         // Get the order
-        const order = await Order.findById(id);
+        const isObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+        const query = isObjectId ? { _id: id } : { orderId: id };
+        const order = await Order.findOne(query);
         if (!order) {
             return NextResponse.json(
                 { success: false, error: 'Order not found' },
@@ -78,8 +80,8 @@ export async function GET(
         const trackingResult = await trackShipment(order.shiprocket.awbCode);
 
         if (trackingResult.success) {
-            // Update cached status in database
-            await Order.findByIdAndUpdate(id, {
+            // Update cached status in database using the actual document _id
+            await Order.findByIdAndUpdate(order._id, {
                 $set: {
                     'shiprocket.status': trackingResult.currentStatus,
                     'shiprocket.lastTrackedAt': new Date(),
