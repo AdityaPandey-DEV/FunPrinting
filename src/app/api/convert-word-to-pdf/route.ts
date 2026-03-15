@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { convertDocxToPdf } from '@/lib/cloudmersive';
 import { convertDocxToPdf as libreOfficeDocxToPdf, isLibreOfficeAvailable } from '@/lib/libreoffice';
+import {
+  convertDocxToPdfViaConvertAPI,
+  convertDocxToPdfViaILovePDF,
+} from '@/lib/freeConverters';
+import { convertDocxToPdfSync } from '@/lib/renderPdfService';
+import { uploadFile } from '@/lib/storage';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,46 +22,72 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only DOCX files are supported' }, { status: 400 });
     }
 
-    // Check if Cloudmersive API key is available
-    const hasCloudmersiveKey = process.env.CLOUDMERSIVE_API_KEY;
-    const hasLibreOffice = await isLibreOfficeAvailable();
-    
-    if (!hasCloudmersiveKey && !hasLibreOffice) {
-      return NextResponse.json({
-        success: false,
-        error: 'No conversion tools available',
-        message: 'Please configure CLOUDMERSIVE_API_KEY or install LibreOffice CLI'
-      }, { status: 500 });
-    }
-
-    // Convert file to buffer
     const docxBuffer = Buffer.from(await file.arrayBuffer());
-    
-    let pdfBuffer;
-    
-    if (hasCloudmersiveKey) {
+
+    let pdfBuffer: Buffer | undefined;
+
+    // 1. Cloudmersive (primary, 800 total free)
+    if (process.env.CLOUDMERSIVE_API_KEY) {
       console.log('🔄 Converting DOCX to PDF using Cloudmersive API...');
-      console.log('📄 Processing file:', file.name, 'Size:', file.size, 'bytes');
-      
       try {
         pdfBuffer = await convertDocxToPdf(docxBuffer);
-        console.log('✅ DOCX to PDF conversion successful using Cloudmersive');
-      } catch (cloudmersiveError) {
-        console.error('❌ Cloudmersive conversion failed:', cloudmersiveError);
-        if (hasLibreOffice) {
-          console.log('🔄 Falling back to LibreOffice CLI...');
+        console.log('✅ DOCX to PDF conversion successful (Cloudmersive)');
+      } catch (err) {
+        console.error('❌ Cloudmersive conversion failed:', err);
+      }
+    }
+
+    // 2. ConvertAPI (250 / month free)
+    if (!pdfBuffer && process.env.CONVERTAPI_SECRET) {
+      console.log('🔄 Falling back to ConvertAPI...');
+      try {
+        pdfBuffer = await convertDocxToPdfViaConvertAPI(docxBuffer);
+        console.log('✅ DOCX to PDF conversion successful (ConvertAPI)');
+      } catch (err) {
+        console.error('❌ ConvertAPI conversion failed:', err);
+      }
+    }
+
+    // 3. iLovePDF (250 / month free)
+    if (!pdfBuffer && process.env.ILOVEPDF_PUBLIC_KEY && process.env.ILOVEPDF_SECRET_KEY) {
+      console.log('🔄 Falling back to iLovePDF...');
+      try {
+        pdfBuffer = await convertDocxToPdfViaILovePDF(docxBuffer);
+        console.log('✅ DOCX to PDF conversion successful (iLovePDF)');
+      } catch (err) {
+        console.error('❌ iLovePDF conversion failed:', err);
+      }
+    }
+
+    // 4. LibreOffice CLI (self-hosted, free — skipped automatically on Vercel)
+    if (!pdfBuffer) {
+      const hasLibreOffice = await isLibreOfficeAvailable();
+      if (hasLibreOffice) {
+        console.log('🔄 Falling back to LibreOffice CLI...');
+        try {
           pdfBuffer = await libreOfficeDocxToPdf(docxBuffer);
-          console.log('✅ DOCX to PDF conversion successful using LibreOffice CLI');
-        } else {
-          throw cloudmersiveError;
+          console.log('✅ DOCX to PDF conversion successful (LibreOffice CLI)');
+        } catch (err) {
+          console.error('❌ LibreOffice CLI conversion failed:', err);
         }
       }
-    } else {
-      console.log('🔄 Converting DOCX to PDF using LibreOffice CLI...');
-      console.log('📄 Processing file:', file.name, 'Size:', file.size, 'bytes');
-      
-      pdfBuffer = await libreOfficeDocxToPdf(docxBuffer);
-      console.log('✅ DOCX to PDF conversion successful using LibreOffice CLI');
+    }
+
+    // 5. Fly.io render service (paid, last resort)
+    if (!pdfBuffer) {
+      console.log('🔄 Falling back to Fly.io (last resort)...');
+      // Upload DOCX so Fly.io can fetch it by URL
+      const tempDocxUrl = await uploadFile(
+        docxBuffer,
+        'convert-word-to-pdf/temp',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      );
+      const flyResult = await convertDocxToPdfSync(tempDocxUrl, 60000, 3);
+      if (!flyResult.success || !flyResult.pdfBuffer) {
+        throw new Error(flyResult.error || 'All PDF conversion methods failed');
+      }
+      pdfBuffer = Buffer.from(flyResult.pdfBuffer, 'base64');
+      console.log('✅ DOCX to PDF conversion successful (Fly.io)');
     }
     
     console.log('📄 Generated PDF buffer size:', pdfBuffer.length, 'bytes');
@@ -72,23 +104,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Word to PDF conversion error:', error);
-    
-    // Handle specific Cloudmersive API errors
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    
-    if (errorMessage.includes('API key')) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid Cloudmersive API key. Please check your configuration.' },
-        { status: 401 }
-      );
-    }
-    
-    if (errorMessage.includes('quota') || errorMessage.includes('limit')) {
-      return NextResponse.json(
-        { success: false, error: 'API quota exceeded. Please try again later.' },
-        { status: 429 }
-      );
-    }
 
     return NextResponse.json(
       { success: false, error: 'Failed to convert Word to PDF' },

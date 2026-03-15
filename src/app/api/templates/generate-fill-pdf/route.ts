@@ -3,6 +3,11 @@ import { fillDocxTemplate } from '@/lib/docxProcessor';
 import { uploadFile } from '@/lib/storage';
 import { convertDocxToPdfSync } from '@/lib/renderPdfService';
 import { convertDocxToPdf as cloudmersiveDocxToPdf } from '@/lib/cloudmersive';
+import {
+  convertDocxToPdfViaConvertAPI,
+  convertDocxToPdfViaILovePDF,
+} from '@/lib/freeConverters';
+import { convertDocxToPdf as libreOfficeDocxToPdf, isLibreOfficeAvailable } from '@/lib/libreoffice';
 import { v4 as uuidv4 } from 'uuid';
 import { jobStore } from '@/lib/jobStore';
 import { generationRateLimit, getClientIdentifier, checkRateLimit } from '@/lib/ratelimit';
@@ -22,25 +27,60 @@ async function convertToPdfInBackground(
   let status: 'completed' | 'failed' = 'completed';
   let error: string | undefined;
 
-  const hasCloudmersiveKey = !!process.env.CLOUDMERSIVE_API_KEY;
-  let cloudmersiveSucceeded = false;
-
-  // Primary: Cloudmersive API
-  if (hasCloudmersiveKey) {
+  // ── 1. Cloudmersive (primary, 800 total free) ────────────────────
+  if (process.env.CLOUDMERSIVE_API_KEY) {
     console.log(`📄 [BG] Job ${jobId}: Converting to PDF via Cloudmersive...`);
     try {
       const pdfBuffer = await cloudmersiveDocxToPdf(filledBuffer);
       pdfUrl = await uploadFile(pdfBuffer, `filled-documents/${jobId}`, 'application/pdf');
       console.log(`✅ [BG] Job ${jobId}: PDF uploaded (Cloudmersive):`, pdfUrl);
-      cloudmersiveSucceeded = true;
-    } catch (cloudmersiveError) {
-      console.error(`❌ [BG] Job ${jobId}: Cloudmersive failed:`, cloudmersiveError);
+    } catch (err) {
+      console.error(`❌ [BG] Job ${jobId}: Cloudmersive failed:`, err);
     }
   }
 
-  // Fallback: Fly.io render service
-  if (!cloudmersiveSucceeded) {
-    console.log(`📄 [BG] Job ${jobId}: Falling back to Fly.io...`);
+  // ── 2. ConvertAPI (250 / month free) ────────────────────────────
+  if (!pdfUrl && process.env.CONVERTAPI_SECRET) {
+    console.log(`📄 [BG] Job ${jobId}: Falling back to ConvertAPI...`);
+    try {
+      const pdfBuffer = await convertDocxToPdfViaConvertAPI(filledBuffer);
+      pdfUrl = await uploadFile(pdfBuffer, `filled-documents/${jobId}`, 'application/pdf');
+      console.log(`✅ [BG] Job ${jobId}: PDF uploaded (ConvertAPI):`, pdfUrl);
+    } catch (err) {
+      console.error(`❌ [BG] Job ${jobId}: ConvertAPI failed:`, err);
+    }
+  }
+
+  // ── 3. iLovePDF (250 / month free) ──────────────────────────────
+  if (!pdfUrl && process.env.ILOVEPDF_PUBLIC_KEY && process.env.ILOVEPDF_SECRET_KEY) {
+    console.log(`📄 [BG] Job ${jobId}: Falling back to iLovePDF...`);
+    try {
+      const pdfBuffer = await convertDocxToPdfViaILovePDF(filledBuffer);
+      pdfUrl = await uploadFile(pdfBuffer, `filled-documents/${jobId}`, 'application/pdf');
+      console.log(`✅ [BG] Job ${jobId}: PDF uploaded (iLovePDF):`, pdfUrl);
+    } catch (err) {
+      console.error(`❌ [BG] Job ${jobId}: iLovePDF failed:`, err);
+    }
+  }
+
+  // ── 4. LibreOffice CLI (self-hosted, free) ───────────────────────
+  if (!pdfUrl) {
+    const hasLibreOffice = await isLibreOfficeAvailable();
+    if (hasLibreOffice) {
+      console.log(`📄 [BG] Job ${jobId}: Falling back to LibreOffice CLI...`);
+      try {
+        const pdfBuffer = await libreOfficeDocxToPdf(filledBuffer);
+        pdfUrl = await uploadFile(pdfBuffer, `filled-documents/${jobId}`, 'application/pdf');
+        console.log(`✅ [BG] Job ${jobId}: PDF uploaded (LibreOffice CLI):`, pdfUrl);
+      } catch (err) {
+        console.error(`❌ [BG] Job ${jobId}: LibreOffice CLI failed:`, err);
+      }
+    }
+  }
+
+  // ── 5. Fly.io render service (paid, last resort) ─────────────────
+  if (!pdfUrl) {
+    console.log(`📄 [BG] Job ${jobId}: Falling back to Fly.io (last resort)...`);
     try {
       const conversionResult = await convertDocxToPdfSync(wordUrl, 60000, 3);
       if (conversionResult.success && conversionResult.pdfBuffer) {
@@ -49,7 +89,7 @@ async function convertToPdfInBackground(
         console.log(`✅ [BG] Job ${jobId}: PDF uploaded (Fly.io):`, pdfUrl);
       } else {
         status = 'failed';
-        error = conversionResult.error || 'PDF conversion failed';
+        error = conversionResult.error || 'All PDF conversion methods failed';
       }
     } catch (flyError) {
       status = 'failed';

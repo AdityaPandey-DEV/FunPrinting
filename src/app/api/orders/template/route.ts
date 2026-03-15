@@ -5,6 +5,11 @@ import Order from '@/models/Order';
 import { fillDocxTemplate, validateFormData } from '@/lib/docxProcessor';
 import { convertDocxToPdf } from '@/lib/cloudmersive';
 import { convertDocxToPdfSync } from '@/lib/renderPdfService';
+import {
+  convertDocxToPdfViaConvertAPI,
+  convertDocxToPdfViaILovePDF,
+} from '@/lib/freeConverters';
+import { convertDocxToPdf as libreOfficeDocxToPdf, isLibreOfficeAvailable } from '@/lib/libreoffice';
 import { uploadFile } from '@/lib/storage';
 import { createRazorpayOrder } from '@/lib/razorpay';
 import { getPricing } from '@/lib/pricing';
@@ -80,26 +85,65 @@ export async function POST(request: NextRequest) {
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     );
 
-    // Convert filled DOCX to PDF — Cloudmersive primary, Fly.io fallback
+    // Convert filled DOCX to PDF — full fallback chain
     console.log('Converting filled DOCX to PDF...');
-    let pdfBuffer: Buffer;
+    let pdfBuffer: Buffer | undefined;
 
-    try {
-      // Primary: Cloudmersive API
-      pdfBuffer = await convertDocxToPdf(filledDocxBuffer);
-      console.log('✅ PDF conversion successful (Cloudmersive)');
-    } catch (cloudmersiveError) {
-      console.error('❌ Cloudmersive conversion failed:', cloudmersiveError);
-      console.log('🔄 Falling back to Fly.io render service...');
+    // 1. Cloudmersive (primary, 800 total free)
+    if (process.env.CLOUDMERSIVE_API_KEY) {
+      try {
+        pdfBuffer = await convertDocxToPdf(filledDocxBuffer);
+        console.log('✅ PDF conversion successful (Cloudmersive)');
+      } catch (err) {
+        console.error('❌ Cloudmersive conversion failed:', err);
+      }
+    }
 
-      // Fallback: Use already-uploaded DOCX URL with Fly.io service
+    // 2. ConvertAPI (250 / month free)
+    if (!pdfBuffer && process.env.CONVERTAPI_SECRET) {
+      console.log('🔄 Falling back to ConvertAPI...');
+      try {
+        pdfBuffer = await convertDocxToPdfViaConvertAPI(filledDocxBuffer);
+        console.log('✅ PDF conversion successful (ConvertAPI)');
+      } catch (err) {
+        console.error('❌ ConvertAPI conversion failed:', err);
+      }
+    }
+
+    // 3. iLovePDF (250 / month free)
+    if (!pdfBuffer && process.env.ILOVEPDF_PUBLIC_KEY && process.env.ILOVEPDF_SECRET_KEY) {
+      console.log('🔄 Falling back to iLovePDF...');
+      try {
+        pdfBuffer = await convertDocxToPdfViaILovePDF(filledDocxBuffer);
+        console.log('✅ PDF conversion successful (iLovePDF)');
+      } catch (err) {
+        console.error('❌ iLovePDF conversion failed:', err);
+      }
+    }
+
+    // 4. LibreOffice CLI (self-hosted, free)
+    if (!pdfBuffer) {
+      const hasLibreOffice = await isLibreOfficeAvailable();
+      if (hasLibreOffice) {
+        console.log('🔄 Falling back to LibreOffice CLI...');
+        try {
+          pdfBuffer = await libreOfficeDocxToPdf(filledDocxBuffer);
+          console.log('✅ PDF conversion successful (LibreOffice CLI)');
+        } catch (err) {
+          console.error('❌ LibreOffice CLI conversion failed:', err);
+        }
+      }
+    }
+
+    // 5. Fly.io render service (paid, last resort)
+    if (!pdfBuffer) {
+      console.log('🔄 Falling back to Fly.io render service (last resort)...');
       const flyResult = await convertDocxToPdfSync(filledDocxUrl, 60000, 3);
       if (!flyResult.success || !flyResult.pdfBuffer) {
-        throw new Error(flyResult.error || 'Both Cloudmersive and Fly.io conversion failed');
+        throw new Error(flyResult.error || 'All PDF conversion methods failed');
       }
-
       pdfBuffer = Buffer.from(flyResult.pdfBuffer, 'base64');
-      console.log('✅ PDF conversion successful (Fly.io fallback)');
+      console.log('✅ PDF conversion successful (Fly.io)');
     }
 
     const filledPdfUrl = await uploadFile(
@@ -302,21 +346,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error creating template order:', error);
-
-    // Handle specific Cloudmersive API errors
-    if (error.message.includes('API key')) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid Cloudmersive API key. Please check your configuration.' },
-        { status: 401 }
-      );
-    }
-
-    if (error.message.includes('quota') || error.message.includes('limit')) {
-      return NextResponse.json(
-        { success: false, error: 'API quota exceeded. Please try again later.' },
-        { status: 429 }
-      );
-    }
 
     return NextResponse.json(
       { success: false, error: 'Failed to create template order' },
