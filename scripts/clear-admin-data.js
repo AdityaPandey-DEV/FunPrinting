@@ -38,7 +38,12 @@ const AdminInfo = mongoose.model('AdminInfo', AdminInfoSchema);
 async function clearAdminData() {
   try {
     // Connect to MongoDB
-    const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://***REMOVED***:***REMOVED***@ad.ynepvru.mongodb.net/photography-services?retryWrites=true&w=majority';
+    const MONGODB_URI = process.env.MONGODB_URI;
+    if (!MONGODB_URI) {
+      console.error('❌ MONGODB_URI environment variable is not set.');
+      console.error('   Run with: MONGODB_URI=<your-uri> node scripts/clear-admin-data.js');
+      process.exit(1);
+    }
     
     await mongoose.connect(MONGODB_URI);
     console.log('Connected to MongoDB');

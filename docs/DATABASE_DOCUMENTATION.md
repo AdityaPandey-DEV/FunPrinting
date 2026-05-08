@@ -1656,7 +1656,7 @@ const apiKey = process.env.API_KEY;
 MONGODB_URI=mongodb://localhost:27017/dev-db
 
 // Production
-MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/prod-db
+MONGODB_URI=mongodb+srv://<username>:<password>@<your-cluster>.mongodb.net/prod-db
 ```
 
 3. **No Code Changes:**

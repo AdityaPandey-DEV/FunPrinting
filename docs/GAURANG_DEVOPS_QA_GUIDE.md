@@ -78,7 +78,7 @@ PRODUCTION (Live URL)
 3. Add each variable:
 
 # Database
-MONGODB_URI = mongodb+srv://username:password@cluster.mongodb.net/print-service
+MONGODB_URI = mongodb+srv://<username>:<password>@<your-cluster>.mongodb.net/print-service
 
 # Authentication
 NEXTAUTH_SECRET = your_random_32_character_secret_key
