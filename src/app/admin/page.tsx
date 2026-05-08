@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import AdminNavigation from '@/components/admin/AdminNavigation';
 import { AdminCard } from '@/components/admin/AdminNavigation';
 import LoadingSpinner from '@/components/admin/LoadingSpinner';
@@ -110,6 +110,7 @@ interface Order {
 function AdminDashboardContent() {
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -120,16 +121,28 @@ function AdminDashboardContent() {
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [printingOrders, setPrintingOrders] = useState<Set<string>>(new Set());
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
+  // Pagination state — initialize from URL ?page= param so we restore position on back-navigation
+  const initialPage = Number(searchParams.get('page')) || 1;
+  const [currentPage, setCurrentPage] = useState(initialPage);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [statusCounts, setStatusCounts] = useState({ pending: 0, printing: 0, dispatched: 0, paymentPending: 0 });
   const ORDERS_PER_PAGE = 10;
 
-  // Fetch orders on component mount
+  // Helper to update the URL ?page= param without a full navigation
+  const updatePageInUrl = useCallback((page: number) => {
+    const url = new URL(window.location.href);
+    if (page <= 1) {
+      url.searchParams.delete('page');
+    } else {
+      url.searchParams.set('page', String(page));
+    }
+    window.history.replaceState({}, '', url.toString());
+  }, []);
+
+  // Fetch orders on component mount (using the page from URL)
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(initialPage);
   }, []);
 
 
@@ -218,6 +231,7 @@ function AdminDashboardContent() {
         setOrders(data.orders);
         setCurrentPage(data.page);
         setTotalPages(data.totalPages);
+        updatePageInUrl(data.page);
         setTotalCount(data.totalCount);
         if (data.statusCounts) {
           setStatusCounts(data.statusCounts);
@@ -633,7 +647,7 @@ function AdminDashboardContent() {
                     <tr
                       key={order._id}
                       className="hover:bg-blue-50 hover:shadow-sm transition-all duration-200 cursor-pointer group"
-                      onClick={() => router.push(`/admin/orders/${order._id}`)}
+                      onClick={() => router.push(`/admin/orders/${order._id}?fromPage=${currentPage}`)}
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
@@ -1021,7 +1035,9 @@ export default function AdminDashboard() {
       subtitle="Sign in with Google to manage all printing orders and track their status"
     >
       <NotificationProvider>
-        <AdminDashboardContent />
+        <Suspense fallback={<LoadingSpinner message="Loading admin dashboard..." />}>
+          <AdminDashboardContent />
+        </Suspense>
       </NotificationProvider>
     </AdminGoogleAuth>
   );

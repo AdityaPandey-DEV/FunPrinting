@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import AdminNavigation from '@/components/admin/AdminNavigation';
 import LoadingSpinner from '@/components/admin/LoadingSpinner';
 import AdminGoogleAuth from '@/components/admin/AdminGoogleAuth';
@@ -104,6 +104,9 @@ interface Order {
 function OrderDetailPageContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromPage = searchParams.get('fromPage');
+  const adminBackUrl = fromPage ? `/admin?page=${fromPage}` : '/admin';
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -161,12 +164,12 @@ function OrderDetailPageContent() {
         setOrder(orderData);
       } else {
         showError('Failed to fetch order details');
-        router.push('/admin');
+        router.push(adminBackUrl);
       }
     } catch (error) {
       console.error('Error fetching order:', error);
       showError('Failed to fetch order details');
-      router.push('/admin');
+      router.push(adminBackUrl);
     } finally {
       setIsLoading(false);
     }
@@ -309,7 +312,7 @@ function OrderDetailPageContent() {
 
       if (data.success) {
         showSuccess('Order deleted successfully!');
-        router.push('/admin');
+        router.push(adminBackUrl);
       } else {
         showError('Failed to delete order');
       }
@@ -368,7 +371,7 @@ function OrderDetailPageContent() {
         <div className="text-center">
           <p className="text-gray-600">Order not found</p>
           <button
-            onClick={() => router.push('/admin')}
+            onClick={() => router.push(adminBackUrl)}
             className="mt-4 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
           >
             Back to Admin Dashboard
@@ -385,7 +388,7 @@ function OrderDetailPageContent() {
           title={`Order #${order.orderId}`}
           subtitle={`Placed on ${formatDate(order.createdAt, 'long')}`}
           showBackButton
-          backUrl="/admin"
+          backUrl={adminBackUrl}
           actions={
             <>
               <select
@@ -403,7 +406,7 @@ function OrderDetailPageContent() {
               </select>
 
               <button
-                onClick={() => router.push('/admin')}
+                onClick={() => router.push(adminBackUrl)}
                 className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
               >
                 Close
@@ -440,7 +443,9 @@ export default function OrderDetailPage() {
       subtitle="Sign in with Google to view and manage order details"
     >
       <NotificationProvider>
-        <OrderDetailPageContent />
+        <Suspense fallback={<LoadingSpinner message="Loading order details..." size="large" />}>
+          <OrderDetailPageContent />
+        </Suspense>
       </NotificationProvider>
     </AdminGoogleAuth>
   );
