@@ -301,7 +301,7 @@ const orderSchema = new mongoose.Schema<IOrder>({
 });
 
 // Generate order ID before saving
-orderSchema.pre('save', async function (next) {
+orderSchema.pre('save', async function () {
   if (this.isNew && !this.orderId) {
     let attempts = 0;
     const maxAttempts = 10;
@@ -334,7 +334,6 @@ orderSchema.pre('save', async function (next) {
       this.orderId = `ORD${uuidv4().replace(/-/g, '').substring(0, 10).toUpperCase()}`;
     }
   }
-  next();
 });
 
 export default mongoose.models.Order || mongoose.model<IOrder>('Order', orderSchema);

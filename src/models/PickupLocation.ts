@@ -69,7 +69,7 @@ const pickupLocationSchema = new mongoose.Schema<IPickupLocation>({
 });
 
 // Ensure only one default location exists
-pickupLocationSchema.pre('save', async function(next) {
+pickupLocationSchema.pre('save', async function() {
   if (this.isDefault) {
     // Set all other locations to non-default
     await mongoose.model('PickupLocation').updateMany(
@@ -77,7 +77,6 @@ pickupLocationSchema.pre('save', async function(next) {
       { isDefault: false }
     );
   }
-  next();
 });
 
 export default mongoose.models.PickupLocation || mongoose.model<IPickupLocation>('PickupLocation', pickupLocationSchema);
