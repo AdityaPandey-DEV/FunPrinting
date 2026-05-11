@@ -108,6 +108,11 @@ export interface IOrder {
     status?: string;         // Latest Shiprocket status string
     lastTrackedAt?: Date;    // When we last fetched tracking info
   };
+  // QR dispatch verification fields
+  verificationOtp?: string;       // 6-digit OTP for dispatch verification
+  otpExpiresAt?: Date;            // OTP expiry time
+  deliveryVerifiedAt?: Date;      // When delivery was verified/confirmed
+  deliveryVerifiedBy?: string;    // Email of person who verified delivery
   createdAt: Date;
   updatedAt: Date;
 }
@@ -296,6 +301,11 @@ const orderSchema = new mongoose.Schema<IOrder>({
     status: String,
     lastTrackedAt: Date,
   },
+  // QR dispatch verification
+  verificationOtp: String,
+  otpExpiresAt: Date,
+  deliveryVerifiedAt: Date,
+  deliveryVerifiedBy: String,
 }, {
   timestamps: true,
 });
