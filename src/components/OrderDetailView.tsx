@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import { QRCodeSVG } from 'qrcode.react';
 import {
   ChartIcon,
   DocumentIcon,
@@ -670,29 +669,6 @@ export function OrderDetailView(props: OrderDetailViewProps) {
                   : 'Unknown'}
               </span>
             </div>
-          </div>
-        </div>
-
-        {/* QR Code for Order Verification */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            📱 Scan to Verify Order
-          </h2>
-          <div className="flex flex-col items-center">
-            <div className="bg-white p-4 rounded-xl border-2 border-gray-200 shadow-sm">
-              <QRCodeSVG
-                value={`${typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'https://funprinting.store')}/verify-order/${order.orderId}`}
-                size={180}
-                level="H"
-                includeMargin={true}
-              />
-            </div>
-            <p className="text-sm text-gray-500 mt-3 text-center">
-              Scan this QR code to verify &amp; collect your order
-            </p>
-            <p className="text-xs text-gray-400 mt-1 font-mono">
-              {order.orderId}
-            </p>
           </div>
         </div>
       </div>
