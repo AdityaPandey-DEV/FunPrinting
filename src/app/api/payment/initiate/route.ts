@@ -4,6 +4,8 @@ import { getPricing } from '@/lib/pricing';
 import connectDB from '@/lib/mongodb';
 import Order from '@/models/Order';
 import { getFileTypeFromFilename, getFileTypeFromFileNames } from '@/lib/fileTypeDetection';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 /**
  * Get page colors for a specific file (handles both array and legacy single object formats)
@@ -61,6 +63,16 @@ function calculateFileCost(
 
 export async function POST(request: NextRequest) {
   try {
+    // Authentication check — only signed-in users can initiate payments
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      console.error('❌ Unauthenticated user attempted to initiate payment');
+      return NextResponse.json(
+        { success: false, error: 'Authentication required. Please sign in to place an order.' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const {
       customerInfo,

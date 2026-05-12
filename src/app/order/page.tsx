@@ -1763,7 +1763,8 @@ function OrderPageContent() {
   const handlePayment = async () => {
     // Check if user is authenticated
     if (!isAuthenticated) {
-      alert('Please sign in to place an order. You can sign in or create an account to continue.');
+      setAuthMode('signin');
+      setShowAuthModal(true);
       return;
     }
 
@@ -4298,7 +4299,7 @@ function OrderPageContent() {
                         handlePayment();
                       }
                     }}
-                    disabled={isProcessingPayment || uploadProgress.uploading || !isRazorpayLoaded}
+                    disabled={isProcessingPayment || uploadProgress.uploading || (isAuthenticated && !isRazorpayLoaded)}
                     className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all text-lg shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                   >
                     {!isAuthenticated ? (

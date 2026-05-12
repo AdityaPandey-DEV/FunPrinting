@@ -24,6 +24,7 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
   const [currentMessage, setCurrentMessage] = useState('Generating file...');
   const [error, setError] = useState<string | null>(null);
   const [templateName, setTemplateName] = useState<string>('document');
+  const [isAuthError, setIsAuthError] = useState(false);
 
   // Function to start generation from form data
   const startGeneration = useCallback(async (storedData: string, templateIdParam: string) => {
@@ -74,6 +75,10 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
           errorMessage = errorText || errorMessage;
         }
         console.error('❌ Generation error:', errorMessage);
+        // Detect auth-specific errors
+        if (response.status === 401 || errorMessage.toLowerCase().includes('authentication required') || errorMessage.toLowerCase().includes('sign in')) {
+          setIsAuthError(true);
+        }
         setError(errorMessage);
         setStatus(prev => ({ ...prev, status: 'failed', progress: 0 }));
         return;
@@ -519,28 +524,56 @@ export default function TemplateLoadingPage({ params }: { params: Promise<{ id: 
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-red-800 text-sm mb-3">{error}</p>
-              <button
-                onClick={() => {
-                  // Retry: check if we have stored form data to re-trigger generation
-                  setError(null);
-                  setStatus({ status: 'processing', progress: 0 });
-                  setCurrentMessage('Retrying...');
-                  if (typeof window !== 'undefined' && templateId) {
-                    const storedData = sessionStorage.getItem('pendingTemplateFormData');
-                    if (storedData) {
-                      startGeneration(storedData, templateId);
-                    } else {
-                      // No stored data — redirect back to form
-                      setError('Form data not found. Please go back and fill the form again.');
-                    }
-                  }
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-              >
-                🔄 Retry Generation
-              </button>
+            <div className={`${isAuthError ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200'} border rounded-lg p-4 mb-6`}>
+              {isAuthError ? (
+                <>
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <p className="text-yellow-800 text-sm font-semibold">Sign in required</p>
+                  </div>
+                  <p className="text-yellow-700 text-sm mb-4">You need to sign in to generate documents. Please sign in and try again.</p>
+                  <div className="flex gap-3">
+                    <Link
+                      href={`/auth/signin?callbackUrl=${encodeURIComponent(`/templates/fill/${templateId}`)}`}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      href={`/templates/fill/${templateId}`}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
+                    >
+                      ← Back to Form
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-red-800 text-sm mb-3">{error}</p>
+                  <button
+                    onClick={() => {
+                      // Retry: check if we have stored form data to re-trigger generation
+                      setError(null);
+                      setStatus({ status: 'processing', progress: 0 });
+                      setCurrentMessage('Retrying...');
+                      if (typeof window !== 'undefined' && templateId) {
+                        const storedData = sessionStorage.getItem('pendingTemplateFormData');
+                        if (storedData) {
+                          startGeneration(storedData, templateId);
+                        } else {
+                          // No stored data — redirect back to form
+                          setError('Form data not found. Please go back and fill the form again.');
+                        }
+                      }
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    🔄 Retry Generation
+                  </button>
+                </>
+              )}
             </div>
           )}
 

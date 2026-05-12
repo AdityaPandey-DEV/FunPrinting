@@ -4,10 +4,22 @@ import DynamicTemplate from '@/models/DynamicTemplate';
 import { createRazorpayOrder } from '@/lib/razorpay';
 import { getPricing } from '@/lib/pricing';
 import User from '@/models/User';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
     console.log('📋 Template payment request received');
+
+    // Authentication check — only signed-in users can create payment orders
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      console.error('❌ Unauthenticated user attempted to create template payment order');
+      return NextResponse.json(
+        { success: false, error: 'Authentication required. Please sign in to make a payment.' },
+        { status: 401 }
+      );
+    }
     
     // Validate Razorpay configuration first
     if (!process.env.RAZORPAY_KEY_ID) {

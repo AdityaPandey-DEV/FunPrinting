@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { useRazorpay } from '@/hooks/useRazorpay';
-import { WarningIcon, DocumentIcon, MemoIcon } from '@/components/SocialIcons';
+import InlineAuthModal from '@/components/InlineAuthModal';
+import { WarningIcon, DocumentIcon, MemoIcon, LockIcon } from '@/components/SocialIcons';
 
 interface FormField {
   key: string;
@@ -39,6 +41,8 @@ type Step = 'filling' | 'payment' | 'complete';
 
 export default function TemplateFillPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const { data: session, status: authStatus } = useSession();
+  const isAuthenticated = !!session?.user;
   const { isLoaded: isRazorpayLoaded, error: razorpayError, openRazorpay } = useRazorpay();
   const [template, setTemplate] = useState<Template | null>(null);
   const [formData, setFormData] = useState<FormData>({});
@@ -51,6 +55,8 @@ export default function TemplateFillPage({ params }: { params: Promise<{ id: str
   const [step, setStep] = useState<Step>('filling');
   const [generatedWordUrl, setGeneratedWordUrl] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
 
   useEffect(() => {
     const getParams = async () => {
@@ -629,6 +635,29 @@ export default function TemplateFillPage({ params }: { params: Promise<{ id: str
               </div>
             )}
 
+            {!isAuthenticated && (
+              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800 mb-3 flex items-center gap-2">
+                  <WarningIcon size={18} className="w-4.5 h-4.5" />
+                  <strong>Sign in required:</strong> You need to sign in to make a payment.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setAuthMode('signin'); setShowAuthModal(true); }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm font-medium"
+                  >
+                    Create Account
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-4 justify-center">
               <button
                 onClick={() => router.push('/templates')}
@@ -637,11 +666,23 @@ export default function TemplateFillPage({ params }: { params: Promise<{ id: str
                 Cancel
               </button>
               <button
-                onClick={handlePayment}
-                disabled={!isRazorpayLoaded || isProcessingPayment}
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    setAuthMode('signin');
+                    setShowAuthModal(true);
+                    return;
+                  }
+                  handlePayment();
+                }}
+                disabled={isProcessingPayment || (!isAuthenticated ? false : !isRazorpayLoaded)}
                 className="bg-blue-600 text-white px-8 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
-                {isProcessingPayment ? (
+                {!isAuthenticated ? (
+                  <>
+                    <LockIcon size={16} className="w-4 h-4 mr-2" />
+                    Sign In to Pay ₹{template.price}
+                  </>
+                ) : isProcessingPayment ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Processing...
@@ -710,6 +751,7 @@ export default function TemplateFillPage({ params }: { params: Promise<{ id: str
 
   // Show form step (default)
   return (
+    <>
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
@@ -763,6 +805,29 @@ export default function TemplateFillPage({ params }: { params: Promise<{ id: str
             </div>
 
             <div className="p-6">
+              {!isAuthenticated && authStatus !== 'loading' && (
+                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800 mb-3 flex items-center gap-2">
+                    <WarningIcon size={18} className="w-4.5 h-4.5" />
+                    <strong>Sign in required:</strong> You need to sign in to generate documents.
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setAuthMode('signin'); setShowAuthModal(true); }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }}
+                      className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm font-medium"
+                    >
+                      Create Account
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {(error || redirectCountdown !== null) && (
                 <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
                   <div className="flex">
@@ -839,11 +904,17 @@ export default function TemplateFillPage({ params }: { params: Promise<{ id: str
                     Cancel
                   </Link>
                   <button
-                    type="submit"
+                    type={isAuthenticated ? 'submit' : 'button'}
+                    onClick={!isAuthenticated ? (e: React.MouseEvent) => { e.preventDefault(); setAuthMode('signin'); setShowAuthModal(true); } : undefined}
                     disabled={isSubmitting}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${isAuthenticated ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'} focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
-                    {isSubmitting ? (
+                    {!isAuthenticated ? (
+                      <>
+                        <LockIcon size={16} className="w-4 h-4 mr-2" />
+                        Sign In to Generate
+                      </>
+                    ) : isSubmitting ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Generating...
@@ -860,5 +931,16 @@ export default function TemplateFillPage({ params }: { params: Promise<{ id: str
         </div>
       </div>
     </div>
+
+    {/* Inline Auth Modal */}
+    <InlineAuthModal
+      isOpen={showAuthModal}
+      onClose={() => setShowAuthModal(false)}
+      onAuthSuccess={() => {
+        setShowAuthModal(false);
+      }}
+      initialMode={authMode}
+    />
+    </>
   );
 }
