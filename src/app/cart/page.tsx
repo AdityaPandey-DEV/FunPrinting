@@ -71,35 +71,53 @@ export default function CartPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+        <div className="min-h-screen" style={{ background: '#faf8f5' }}>
             {/* Header */}
-            <div className="bg-white border-b shadow-sm">
+            <div style={{
+                background: 'white',
+                borderBottom: '1px solid rgba(26,26,46,0.06)',
+                boxShadow: '0 1px 4px rgba(26,26,46,0.03)',
+            }}>
                 <div className="max-w-5xl mx-auto px-4 py-6">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                                🛒 Your Cart
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-2xl font-bold" style={{
+                                    fontFamily: "'Playfair Display', Georgia, serif",
+                                    color: '#1a1a2e'
+                                }}>
+                                    Your Cart
+                                </h1>
                                 {cartItems.length > 0 && (
-                                    <span className="bg-amber-100 text-amber-800 text-sm font-semibold px-3 py-1 rounded-full">
+                                    <span className="text-xs font-semibold px-3 py-1 rounded-full"
+                                        style={{ background: 'var(--color-ink-50)', color: 'var(--color-ink-600)' }}>
                                         {cartItems.length} item{cartItems.length !== 1 ? 's' : ''}
                                     </span>
                                 )}
-                            </h1>
-                            <p className="text-sm text-gray-500 mt-1">
+                            </div>
+                            <p className="text-sm mt-1" style={{ color: '#72729e' }}>
                                 Batch your print orders together for shared delivery costs
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
-                            <Link
-                                href="/order"
-                                className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                            >
+                            <Link href="/order"
+                                className="px-4 py-2 text-sm font-medium rounded-xl"
+                                style={{
+                                    background: 'var(--color-ink-50)',
+                                    color: 'var(--color-ink-600)',
+                                    transition: 'all 0.2s ease',
+                                }}>
                                 + Add More Items
                             </Link>
                             {cartItems.length > 0 && (
                                 <button
                                     onClick={handleClearAll}
-                                    className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                                    className="px-4 py-2 text-sm font-medium rounded-xl"
+                                    style={{
+                                        background: '#fef2f2',
+                                        color: '#dc2626',
+                                        transition: 'all 0.2s ease',
+                                    }}
                                 >
                                     Clear All
                                 </button>
@@ -113,12 +131,23 @@ export default function CartPage() {
                 {cartItems.length === 0 ? (
                     /* Empty Cart */
                     <div className="text-center py-20">
-                        <div className="text-6xl mb-4">🛒</div>
-                        <h2 className="text-xl font-semibold text-gray-700 mb-2">Your cart is empty</h2>
-                        <p className="text-gray-500 mb-6">Add files to your cart to batch multiple print orders together</p>
-                        <Link
-                            href="/order"
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
+                        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center text-4xl"
+                            style={{ background: 'var(--color-cream-200)' }}>
+                            🛒
+                        </div>
+                        <h2 className="text-xl font-bold mb-2"
+                            style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>
+                            Your cart is empty
+                        </h2>
+                        <p className="text-sm mb-6" style={{ color: '#72729e' }}>
+                            Add files to your cart to batch multiple print orders together
+                        </p>
+                        <Link href="/order"
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white"
+                            style={{
+                                background: 'linear-gradient(135deg, #e94560, #1a1a2e)',
+                                boxShadow: '0 4px 16px rgba(233, 69, 96, 0.2)',
+                            }}
                         >
                             📄 Start Ordering
                         </Link>
@@ -128,17 +157,21 @@ export default function CartPage() {
                         {/* Cart Items List */}
                         <div className="lg:col-span-2 space-y-4">
                             {cartItems.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
-                                >
+                                <div key={item.id} className="rounded-2xl overflow-hidden"
+                                    style={{
+                                        background: 'white',
+                                        border: '1px solid rgba(26,26,46,0.06)',
+                                        boxShadow: '0 2px 12px rgba(26,26,46,0.04)',
+                                        transition: 'box-shadow 0.3s ease',
+                                    }}>
                                     {/* Item Header */}
-                                    <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b">
+                                    <div className="flex items-center justify-between px-6 py-4"
+                                        style={{ borderBottom: '1px solid rgba(26,26,46,0.04)', background: 'var(--color-cream-50)' }}>
                                         <div className="flex items-center gap-3">
                                             <span className="text-2xl">{getFileIcon(item.fileName)}</span>
                                             <div>
-                                                <h3 className="font-semibold text-gray-800">{item.fileName}</h3>
-                                                <p className="text-xs text-gray-400">
+                                                <h3 className="font-semibold text-sm" style={{ color: '#1a1a2e' }}>{item.fileName}</h3>
+                                                <p className="text-xs" style={{ color: '#a3a3c2' }}>
                                                     {formatFileSize(item.fileSize)} • {item.pageCount} page{item.pageCount !== 1 ? 's' : ''} • Added {new Date(item.addedAt).toLocaleString()}
                                                 </p>
                                             </div>
@@ -148,45 +181,48 @@ export default function CartPage() {
                                     {/* Item Details */}
                                     <div className="px-6 py-4">
                                         <div className="flex items-center justify-between">
-                                            <div className="flex flex-wrap gap-3">
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-700">
-                                                    � {item.printingOptions.pageSize}
-                                                </span>
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-700">
-                                                    {item.printingOptions.color === 'color' ? '🎨 Color' :
-                                                        item.printingOptions.color === 'mixed' ? '🎨 Mixed' : '⬛ B&W'}
-                                                </span>
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-700">
-                                                    {item.printingOptions.sided === 'double' ? '↔️ Double Sided' : '→ Single Sided'}
-                                                </span>
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-700">
-                                                    📋 {item.printingOptions.copies} {item.printingOptions.copies > 1 ? 'copies' : 'copy'}
-                                                </span>
+                                            <div className="flex flex-wrap gap-2">
+                                                {[
+                                                    { label: item.printingOptions.pageSize, icon: '📐' },
+                                                    { label: item.printingOptions.color === 'color' ? 'Color' : item.printingOptions.color === 'mixed' ? 'Mixed' : 'B&W',
+                                                      icon: item.printingOptions.color === 'bw' ? '⬛' : '🎨' },
+                                                    { label: item.printingOptions.sided === 'double' ? 'Double Sided' : 'Single Sided',
+                                                      icon: item.printingOptions.sided === 'double' ? '↔️' : '→' },
+                                                    { label: `${item.printingOptions.copies} ${item.printingOptions.copies > 1 ? 'copies' : 'copy'}`, icon: '📋' },
+                                                ].map((tag, idx) => (
+                                                    <span key={idx}
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium"
+                                                        style={{ background: 'var(--color-cream-100)', color: '#515182' }}>
+                                                        {tag.icon} {tag.label}
+                                                    </span>
+                                                ))}
                                                 {item.printingOptions.serviceOption && item.printingOptions.serviceOption !== 'service' && (
-                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 rounded-full text-xs font-medium text-blue-700">
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium"
+                                                        style={{ background: 'var(--color-ink-50)', color: 'var(--color-ink-600)' }}>
                                                         {item.printingOptions.serviceOption === 'binding' ? '📎 Binding' : '📁 File'}
                                                     </span>
                                                 )}
                                             </div>
                                             <div className="text-right ml-4">
-                                                <p className="text-lg font-bold text-gray-800">₹{estimateItemPrice(item, pricing)}</p>
-                                                <p className="text-[10px] text-gray-400">estimated</p>
+                                                <p className="text-lg font-bold" style={{ color: '#1a1a2e' }}>
+                                                    ₹{estimateItemPrice(item, pricing)}
+                                                </p>
+                                                <p className="text-[10px]" style={{ color: '#a3a3c2' }}>estimated</p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Action Buttons — Edit (full page) & Remove */}
-                                    <div className="px-6 py-3 bg-gray-50 border-t flex items-center justify-end gap-2">
-                                        <button
-                                            onClick={() => handleEdit(item)}
-                                            className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-1.5"
-                                        >
+                                    {/* Actions */}
+                                    <div className="px-6 py-3 flex items-center justify-end gap-2"
+                                        style={{ borderTop: '1px solid rgba(26,26,46,0.04)', background: 'var(--color-cream-50)' }}>
+                                        <button onClick={() => handleEdit(item)}
+                                            className="px-4 py-2 text-sm font-medium rounded-xl flex items-center gap-1.5"
+                                            style={{ background: 'var(--color-ink-50)', color: 'var(--color-ink-600)', transition: 'all 0.2s ease' }}>
                                             ✏️ Edit
                                         </button>
-                                        <button
-                                            onClick={() => handleRemove(item.id)}
-                                            className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-1.5"
-                                        >
+                                        <button onClick={() => handleRemove(item.id)}
+                                            className="px-4 py-2 text-sm font-medium rounded-xl flex items-center gap-1.5"
+                                            style={{ background: '#fef2f2', color: '#dc2626', transition: 'all 0.2s ease' }}>
                                             🗑️ Remove
                                         </button>
                                     </div>
@@ -196,57 +232,66 @@ export default function CartPage() {
 
                         {/* Order Summary Sidebar */}
                         <div className="lg:col-span-1">
-                            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sticky top-24">
-                                <h3 className="font-bold text-gray-800 text-lg mb-4">Order Summary</h3>
+                            <div className="rounded-2xl p-6 sticky top-24"
+                                style={{
+                                    background: 'white',
+                                    border: '1px solid rgba(26,26,46,0.06)',
+                                    boxShadow: '0 4px 24px rgba(26,26,46,0.06)',
+                                }}>
+                                <h3 className="font-bold text-lg mb-4"
+                                    style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>
+                                    Order Summary
+                                </h3>
 
                                 {/* Items Breakdown */}
                                 <div className="space-y-2 mb-4">
                                     {cartItems.map((item) => (
                                         <div key={item.id} className="flex justify-between text-sm">
-                                            <span className="text-gray-600 truncate mr-2 max-w-[60%]">{item.fileName}</span>
+                                            <span className="truncate mr-2 max-w-[60%]" style={{ color: '#515182' }}>{item.fileName}</span>
                                             {pricing ? (
-                                                <span className="font-medium text-gray-800">₹{estimateItemPrice(item, pricing)}</span>
+                                                <span className="font-medium" style={{ color: '#1a1a2e' }}>₹{estimateItemPrice(item, pricing)}</span>
                                             ) : (
-                                                <div className="h-4 w-12 bg-gray-200 animate-pulse rounded"></div>
+                                                <div className="h-4 w-12 rounded animate-pulse" style={{ background: 'var(--color-cream-200)' }} />
                                             )}
                                         </div>
                                     ))}
                                 </div>
 
-                                <div className="border-t pt-3 mb-3">
+                                <div className="pt-3 mb-3" style={{ borderTop: '1px solid rgba(26,26,46,0.06)' }}>
                                     <div className="flex justify-between text-sm mb-1">
-                                        <span className="text-gray-600">Subtotal</span>
+                                        <span style={{ color: '#515182' }}>Subtotal</span>
                                         {pricing ? (
-                                            <span className="font-semibold text-gray-800">₹{estimateCartTotal(pricing)}</span>
+                                            <span className="font-semibold" style={{ color: '#1a1a2e' }}>₹{estimateCartTotal(pricing)}</span>
                                         ) : (
-                                            <div className="h-5 w-16 bg-gray-200 animate-pulse rounded"></div>
+                                            <div className="h-5 w-16 rounded animate-pulse" style={{ background: 'var(--color-cream-200)' }} />
                                         )}
                                     </div>
                                     <div className="flex justify-between text-sm mb-1">
-                                        <span className="text-gray-600">Delivery</span>
-                                        <span className="text-gray-500 text-xs">at checkout</span>
+                                        <span style={{ color: '#515182' }}>Delivery</span>
+                                        <span className="text-xs" style={{ color: '#a3a3c2' }}>at checkout</span>
                                     </div>
                                 </div>
 
-                                <div className="border-t pt-3 mb-4">
+                                <div className="pt-3 mb-4" style={{ borderTop: '1px solid rgba(26,26,46,0.06)' }}>
                                     <div className="flex justify-between items-center">
-                                        <span className="font-bold text-gray-800">Est. Total</span>
+                                        <span className="font-bold" style={{ color: '#1a1a2e' }}>Est. Total</span>
                                         {pricing ? (
-                                            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                            <span className="text-xl font-bold" style={{ color: '#e94560' }}>
                                                 ₹{estimateCartTotal(pricing)}
                                             </span>
                                         ) : (
-                                            <div className="h-7 w-20 bg-gray-200 animate-pulse rounded"></div>
+                                            <div className="h-7 w-20 rounded animate-pulse" style={{ background: 'var(--color-cream-200)' }} />
                                         )}
                                     </div>
                                 </div>
 
                                 {/* Delivery Savings */}
-                                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                                    <p className="text-xs text-green-700 font-medium flex items-center gap-1">
+                                <div className="rounded-xl p-3 mb-4"
+                                    style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                                    <p className="text-xs font-medium flex items-center gap-1" style={{ color: '#166534' }}>
                                         💰 Saving on delivery!
                                     </p>
-                                    <p className="text-xs text-green-600 mt-1">
+                                    <p className="text-xs mt-1" style={{ color: '#15803d' }}>
                                         Combined weight: {(getCartWeight() * 1000).toFixed(0)}g — one delivery charge for all {cartItems.length} items
                                     </p>
                                 </div>
@@ -254,12 +299,19 @@ export default function CartPage() {
                                 {/* Checkout Button */}
                                 <button
                                     onClick={handleCheckout}
-                                    className="w-full px-6 py-3.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                                    className="w-full px-6 py-3.5 rounded-xl font-semibold text-white"
+                                    style={{
+                                        background: 'linear-gradient(135deg, #e94560, #d52a4a)',
+                                        boxShadow: '0 4px 16px rgba(233, 69, 96, 0.25)',
+                                        transition: 'all 0.3s ease',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(233,69,96,0.3)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(233,69,96,0.25)'; }}
                                 >
                                     🛍️ Proceed to Checkout
                                 </button>
 
-                                <p className="text-[10px] text-gray-400 text-center mt-3">
+                                <p className="text-[10px] text-center mt-3" style={{ color: '#a3a3c2' }}>
                                     You&apos;ll choose delivery options &amp; pay on the next page
                                 </p>
                             </div>

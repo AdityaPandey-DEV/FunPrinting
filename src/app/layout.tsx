@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { DM_Sans, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import SessionProvider from '@/components/SessionProvider';
 import ConditionalLayout from '@/components/ConditionalLayout';
@@ -7,7 +7,19 @@ import { generateMetadata as generateSEOMetadata } from '@/lib/seo';
 import connectDB from '@/lib/mongodb';
 import AdminInfo from '@/models/AdminInfo';
 
-const inter = Inter({ subsets: ['latin'] });
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  variable: '--font-body',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+});
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+  weight: ['400', '500', '600', '700', '800', '900'],
+});
 
 // Generate dynamic metadata with admin info from database
 export async function generateMetadata(): Promise<Metadata> {
@@ -85,11 +97,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${dmSans.variable} ${playfair.variable}`}>
       <head>
         <link rel="canonical" href={process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://www.funprinting.store'} />
       </head>
-      <body className={inter.className}>
+      <body className="font-body antialiased">
         <SessionProvider>
           <ConditionalLayout>
             {children}

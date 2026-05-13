@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Toaster } from 'react-hot-toast';
+import ToasterProvider from '@/components/ToasterProvider';
 
 interface ConditionalLayoutProps {
   children: React.ReactNode;
@@ -27,32 +27,10 @@ export default function ConditionalLayout({ children }: ConditionalLayoutProps) 
   // For regular routes, show navbar and footer
   return (
     <>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: '#363636',
-            color: '#fff',
-            borderRadius: '8px',
-            padding: '16px',
-            fontSize: '14px',
-          },
-          error: {
-            duration: 4000,
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
-            },
-            style: {
-              background: '#ef4444',
-            },
-          },
-        }}
-      />
+      <ToasterProvider />
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow">
+        <main className="flex-grow pt-16">
           {children}
         </main>
         <Footer />

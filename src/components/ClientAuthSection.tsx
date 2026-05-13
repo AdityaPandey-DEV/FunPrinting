@@ -39,7 +39,10 @@ export default function ClientAuthSection() {
       <div className="flex items-center space-x-3">
         <Link
           href="/profile"
-          className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 hover:border-gray-500 transition-all duration-200 cursor-pointer flex-shrink-0"
+          className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden border-2 transition-all duration-200 cursor-pointer flex-shrink-0"
+          style={{ borderColor: 'rgba(26,26,46,0.15)' }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#e94560'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(26,26,46,0.15)'; }}
           title="View Profile"
         >
           {showImage ? (
@@ -57,7 +60,10 @@ export default function ClientAuthSection() {
         </Link>
         <button
           onClick={() => logout()}
-          className="text-sm text-gray-700 hover:text-black hover:bg-gray-100 px-3 py-2 rounded-md font-medium transition-all duration-200 whitespace-nowrap"
+          className="text-sm px-3 py-2 rounded-lg font-medium transition-all duration-200 whitespace-nowrap"
+          style={{ color: '#515182' }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#e94560'; e.currentTarget.style.background = 'rgba(233,69,96,0.05)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = '#515182'; e.currentTarget.style.background = 'transparent'; }}
         >
           Sign Out
         </button>
@@ -69,13 +75,20 @@ export default function ClientAuthSection() {
     <div className="flex items-center space-x-3">
       <Link
         href="/auth/signin"
-        className="text-sm text-gray-700 hover:text-black px-3 py-2 rounded-md font-medium transition-colors whitespace-nowrap"
+        className="text-sm px-3 py-2 rounded-lg font-medium transition-colors whitespace-nowrap"
+        style={{ color: '#515182' }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = '#1a1a2e'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = '#515182'; }}
       >
         Sign In
       </Link>
       <Link
         href="/auth/signup"
-        className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
+        className="text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap"
+        style={{
+          background: 'linear-gradient(135deg, #e94560, #d52a4a)',
+          boxShadow: '0 2px 8px rgba(233, 69, 96, 0.2)',
+        }}
       >
         Sign Up
       </Link>

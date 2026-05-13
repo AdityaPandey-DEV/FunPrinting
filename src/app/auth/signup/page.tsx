@@ -136,189 +136,263 @@ export default function SignUpPage() {
     }
   };
 
+  /* Shared input styling */
+  const inputStyle = {
+    border: '2px solid rgba(26,26,46,0.1)',
+    background: 'white',
+    color: '#1a1a2e',
+    outline: 'none',
+    transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+  };
+
+  const onFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.borderColor = '#e94560';
+    e.target.style.boxShadow = '0 0 0 3px rgba(233,69,96,0.1)';
+  };
+
+  const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.borderColor = 'rgba(26,26,46,0.1)';
+    e.target.style.boxShadow = 'none';
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link href="/auth/signin" className="font-medium text-blue-600 hover:text-blue-500">
-              sign in to your existing account
-            </Link>
+    <div className="min-h-screen flex">
+      {/* Left Panel — Branding */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center"
+        style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #2a2a46 100%)' }}>
+        <div className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        />
+
+        <div className="relative z-10 max-w-md px-12 text-center">
+          <div className="w-3 h-3 rounded-full mx-auto mb-8"
+            style={{ background: '#e94560' }} />
+
+          <h1 className="text-5xl font-bold text-white mb-6"
+            style={{ fontFamily: "'Playfair Display', Georgia, serif", lineHeight: 1.15 }}>
+            Start printing.
+          </h1>
+          <p className="text-lg leading-relaxed"
+            style={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'DM Sans', sans-serif" }}>
+            Create your account to order prints, save templates, and track deliveries — all in one place.
+          </p>
+
+          <div className="mt-10 mx-auto w-16 h-px"
+            style={{ background: 'rgba(233, 69, 96, 0.5)' }} />
+          <p className="mt-4 text-xs uppercase tracking-[0.2em]"
+            style={{ color: 'rgba(255,255,255,0.35)' }}>
+            Fun Printing
           </p>
         </div>
+      </div>
 
-        <div className="bg-white py-8 px-6 shadow rounded-lg">
-          {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
-              {success}
-            </div>
-          )}
-
-          {showResend && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
-              <p className="text-sm text-blue-700 mb-3">
-                Didn&apos;t receive the verification email? Check your spam folder or resend it.
-              </p>
-              <button
-                onClick={handleResendVerification}
-                disabled={isResending}
-                className="w-full py-2 px-4 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isResending ? 'Sending...' : 'Resend Verification Email'}
-              </button>
-            </div>
-          )}
-
-          {/* Google Sign In Button */}
-          <button
-            onClick={handleGoogleSignIn}
-            disabled={isLoading}
-            className="w-full flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-              <path
-                fill="#4285F4"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              />
-            </svg>
-            Continue with Google
-          </button>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or create account with email</span>
-              </div>
-            </div>
+      {/* Right Panel — Form */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12"
+        style={{ background: '#faf8f5' }}>
+        <div className="w-full max-w-md">
+          {/* Mobile brand header */}
+          <div className="lg:hidden text-center mb-8">
+            <div className="w-2.5 h-2.5 rounded-full mx-auto mb-4"
+              style={{ background: '#e94560' }} />
+            <h1 className="text-3xl font-bold"
+              style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>
+              Create Account
+            </h1>
           </div>
 
-          {/* Email/Password Form */}
-          <form className="mt-6 space-y-4" onSubmit={handleEmailSignUp}>
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                required
-                value={formData.name}
-                onChange={handleInputChange}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your full name"
-              />
+          {/* Desktop heading */}
+          <div className="hidden lg:block mb-8">
+            <p className="text-xs uppercase tracking-[0.15em] mb-3"
+              style={{ color: '#e94560', fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>
+              Get Started
+            </p>
+            <h2 className="text-3xl font-bold mb-2"
+              style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>
+              Create your account
+            </h2>
+            <p className="text-sm" style={{ color: '#72729e' }}>
+              Or{' '}
+              <Link href="/auth/signin"
+                className="font-medium hover:underline"
+                style={{ color: '#e94560' }}>
+                sign in to your existing account
+              </Link>
+            </p>
+          </div>
+
+          {/* Form card */}
+          <div className="rounded-2xl p-8"
+            style={{
+              background: 'white',
+              border: '1px solid rgba(26,26,46,0.06)',
+              boxShadow: '0 4px 24px rgba(26,26,46,0.06)'
+            }}>
+            {error && (
+              <div className="mb-4 p-3 rounded-xl text-sm font-medium"
+                style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b' }}>
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="mb-4 p-3 rounded-xl text-sm font-medium"
+                style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534' }}>
+                {success}
+              </div>
+            )}
+
+            {showResend && (
+              <div className="mb-4 p-3 rounded-xl"
+                style={{ background: 'var(--color-ink-50)', border: '1px solid var(--color-ink-100)' }}>
+                <p className="text-sm mb-3" style={{ color: 'var(--color-ink-600)' }}>
+                  Didn&apos;t receive the verification email? Check your spam folder or resend it.
+                </p>
+                <button
+                  onClick={handleResendVerification}
+                  disabled={isResending}
+                  className="w-full py-2 px-4 rounded-xl text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    background: 'white',
+                    border: '1px solid var(--color-ink-200)',
+                    color: 'var(--color-ink-600)',
+                  }}
+                >
+                  {isResending ? 'Sending...' : 'Resend Verification Email'}
+                </button>
+              </div>
+            )}
+
+            {/* Google Sign In */}
+            <button
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+              className="w-full flex justify-center items-center px-4 py-3 rounded-xl text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                background: 'white',
+                border: '2px solid rgba(26,26,46,0.1)',
+                color: '#1a1a2e',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(26,26,46,0.2)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(26,26,46,0.06)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(26,26,46,0.1)'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+              </svg>
+              Continue with Google
+            </button>
+
+            {/* Divider */}
+            <div className="my-6 relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full" style={{ borderTop: '1px solid rgba(26,26,46,0.08)' }} />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="px-3 text-xs" style={{ background: 'white', color: '#a3a3c2' }}>
+                  or create with email
+                </span>
+              </div>
             </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={formData.email}
-                onChange={handleInputChange}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your email"
-              />
-            </div>
+            {/* Email Form */}
+            <form className="space-y-4" onSubmit={handleEmailSignUp}>
+              <div>
+                <label htmlFor="name" className="block text-sm font-semibold mb-1.5" style={{ color: '#1a1a2e' }}>
+                  Full Name
+                </label>
+                <input id="name" name="name" type="text" autoComplete="name" required
+                  value={formData.name} onChange={handleInputChange}
+                  className="w-full px-4 py-3 rounded-xl text-sm"
+                  style={inputStyle} onFocus={onFocus} onBlur={onBlur}
+                  placeholder="Your full name"
+                />
+              </div>
 
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone Number (Optional)
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                autoComplete="tel"
-                value={formData.phone}
-                onChange={handleInputChange}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your phone number"
-              />
-            </div>
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold mb-1.5" style={{ color: '#1a1a2e' }}>
+                  Email address
+                </label>
+                <input id="email" name="email" type="email" autoComplete="email" required
+                  value={formData.email} onChange={handleInputChange}
+                  className="w-full px-4 py-3 rounded-xl text-sm"
+                  style={inputStyle} onFocus={onFocus} onBlur={onBlur}
+                  placeholder="you@example.com"
+                />
+              </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={formData.password}
-                onChange={handleInputChange}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Create a password (min 6 characters)"
-              />
-            </div>
+              <div>
+                <label htmlFor="phone" className="block text-sm font-semibold mb-1.5" style={{ color: '#1a1a2e' }}>
+                  Phone Number <span style={{ color: '#a3a3c2', fontWeight: 400 }}>(Optional)</span>
+                </label>
+                <input id="phone" name="phone" type="tel" autoComplete="tel"
+                  value={formData.phone} onChange={handleInputChange}
+                  className="w-full px-4 py-3 rounded-xl text-sm"
+                  style={inputStyle} onFocus={onFocus} onBlur={onBlur}
+                  placeholder="+91 98765 43210"
+                />
+              </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Confirm your password"
-              />
-            </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="password" className="block text-sm font-semibold mb-1.5" style={{ color: '#1a1a2e' }}>
+                    Password
+                  </label>
+                  <input id="password" name="password" type="password" autoComplete="new-password" required
+                    value={formData.password} onChange={handleInputChange}
+                    className="w-full px-4 py-3 rounded-xl text-sm"
+                    style={inputStyle} onFocus={onFocus} onBlur={onBlur}
+                    placeholder="Min 6 chars"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-semibold mb-1.5" style={{ color: '#1a1a2e' }}>
+                    Confirm
+                  </label>
+                  <input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" required
+                    value={formData.confirmPassword} onChange={handleInputChange}
+                    className="w-full px-4 py-3 rounded-xl text-sm"
+                    style={inputStyle} onFocus={onFocus} onBlur={onBlur}
+                    placeholder="Re-enter"
+                  />
+                </div>
+              </div>
 
-            <div>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  background: 'linear-gradient(135deg, #e94560, #d52a4a)',
+                  boxShadow: '0 4px 16px rgba(233, 69, 96, 0.25)',
+                  transition: 'all 0.3s ease',
+                }}
+                onMouseEnter={(e) => { if (!isLoading) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(233,69,96,0.3)'; } }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(233,69,96,0.25)'; }}
               >
                 {isLoading ? 'Creating account...' : 'Create account'}
               </button>
-            </div>
-          </form>
-        </div>
+            </form>
+          </div>
 
-        <div className="text-center">
-          <Link href="/" className="text-sm text-gray-600 hover:text-gray-500">
-            ← Back to home
-          </Link>
+          {/* Mobile sign in link */}
+          <div className="lg:hidden mt-6 text-center">
+            <p className="text-sm" style={{ color: '#72729e' }}>
+              Already have an account?{' '}
+              <Link href="/auth/signin" className="font-medium" style={{ color: '#e94560' }}>
+                Sign in
+              </Link>
+            </p>
+          </div>
+
+          <div className="mt-6 text-center">
+            <Link href="/" className="text-sm" style={{ color: '#a3a3c2' }}>
+              ← Back to home
+            </Link>
+          </div>
         </div>
       </div>
     </div>

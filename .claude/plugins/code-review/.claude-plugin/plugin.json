@@ -1,0 +1,9 @@
+{
+  "name": "code-review",
+  "version": "1.0.0",
+  "description": "Automated PR code review with multi-agent confidence scoring",
+  "author": {
+    "name": "Boris Cherny",
+    "email": "boris@anthropic.com"
+  }
+}

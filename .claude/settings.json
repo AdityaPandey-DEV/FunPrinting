@@ -1,0 +1,19 @@
+{
+  "plugins": [
+    {
+      "path": ".claude/plugins/frontend-design"
+    },
+    {
+      "path": ".claude/plugins/security-guidance"
+    },
+    {
+      "path": ".claude/plugins/code-review"
+    },
+    {
+      "path": ".claude/plugins/commit-commands"
+    },
+    {
+      "path": ".claude/plugins/feature-dev"
+    }
+  ]
+}

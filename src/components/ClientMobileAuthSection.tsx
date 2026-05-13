@@ -44,9 +44,13 @@ export default function ClientMobileAuthSection({ onMenuClose }: ClientMobileAut
         <Link
           href="/profile"
           onClick={onMenuClose}
-          className="flex items-center space-x-3 mb-3 p-2 rounded-md hover:bg-gray-100 transition-colors"
+          className="flex items-center space-x-3 mb-3 p-2 rounded-lg transition-colors"
+          style={{ background: 'transparent' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(233,69,96,0.04)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
         >
-          <div className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 flex-shrink-0">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden border-2 flex-shrink-0"
+            style={{ borderColor: 'rgba(26,26,46,0.15)' }}>
             {showImage ? (
               <img
                 src={profileImage}
@@ -61,10 +65,10 @@ export default function ClientMobileAuthSection({ onMenuClose }: ClientMobileAut
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm text-gray-900 font-medium truncate">
+            <div className="text-sm font-medium truncate" style={{ color: '#1a1a2e' }}>
               {user?.name || user?.email}
             </div>
-            <div className="text-xs text-gray-500">View Profile</div>
+            <div className="text-xs" style={{ color: '#a3a3c2' }}>View Profile</div>
           </div>
         </Link>
         <button
@@ -72,7 +76,8 @@ export default function ClientMobileAuthSection({ onMenuClose }: ClientMobileAut
             logout();
             onMenuClose();
           }}
-          className="text-gray-700 hover:text-black hover:bg-gray-100 block px-3 py-2 rounded-md text-base font-medium transition-all duration-200 w-full text-left"
+          className="block px-3 py-2 rounded-lg text-base font-medium transition-all duration-200 w-full text-left"
+          style={{ color: '#515182' }}
         >
           Sign Out
         </button>
@@ -84,14 +89,19 @@ export default function ClientMobileAuthSection({ onMenuClose }: ClientMobileAut
     <div className="px-3 py-2 space-y-2">
       <Link
         href="/auth/signin"
-        className="text-gray-700 hover:text-black hover:bg-gray-100 block px-3 py-2 rounded-md text-base font-medium transition-all duration-200"
+        className="block px-3 py-2 rounded-lg text-base font-medium transition-all duration-200"
+        style={{ color: '#515182' }}
         onClick={onMenuClose}
       >
         Sign In
       </Link>
       <Link
         href="/auth/signup"
-        className="bg-blue-600 text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-700 transition-colors text-center"
+        className="text-white block px-3 py-2 rounded-xl text-base font-semibold transition-colors text-center"
+        style={{
+          background: 'linear-gradient(135deg, #e94560, #d52a4a)',
+          boxShadow: '0 2px 8px rgba(233, 69, 96, 0.2)',
+        }}
         onClick={onMenuClose}
       >
         Sign Up
