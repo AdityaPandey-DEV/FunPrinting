@@ -336,9 +336,9 @@ export default function MyOrdersPage() {
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center py-16">
-            <p className="text-xs uppercase tracking-[0.2em] mb-2" style={{ color: '#e94560', fontWeight: 600 }}>Account</p>
-            <h1 className="text-3xl font-bold mb-3" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>My Orders</h1>
-            <p className="text-base mb-8" style={{ color: '#72729e' }}>
+            <p className="text-xs uppercase tracking-[0.2em] mb-2" style={{ color: 'var(--ed-accent)', fontWeight: 600 }}>Account</p>
+            <h1 className="text-3xl font-bold mb-3" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--ed-heading)' }}>My Orders</h1>
+            <p className="text-base mb-8" style={{ color: 'var(--ed-subtext)' }}>
               Please sign in to view your orders
             </p>
             <a
@@ -359,9 +359,9 @@ export default function MyOrdersPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-start gap-3 mb-8">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] mb-1" style={{ color: '#e94560', fontWeight: 600 }}>Account</p>
-            <h1 className="text-2xl sm:text-3xl font-bold mb-1" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>My Orders</h1>
-            <p className="text-sm sm:text-base" style={{ color: '#72729e' }}>
+            <p className="text-xs uppercase tracking-[0.2em] mb-1" style={{ color: 'var(--ed-accent)', fontWeight: 600 }}>Account</p>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--ed-heading)' }}>My Orders</h1>
+            <p className="text-sm sm:text-base" style={{ color: 'var(--ed-subtext)' }}>
               Welcome back, {user?.name || user?.email}
             </p>
           </div>
@@ -369,7 +369,7 @@ export default function MyOrdersPage() {
             onClick={loadOrders}
             disabled={isLoading}
             className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
-            style={{ background: 'rgba(26,26,46,0.04)', color: '#515182' }}
+            style={{ background: 'var(--ed-btn-secondary-bg)', color: 'var(--ed-btn-secondary-text)' }}
           >
             {isLoading ? 'Refreshing...' : '↻ Refresh'}
           </button>

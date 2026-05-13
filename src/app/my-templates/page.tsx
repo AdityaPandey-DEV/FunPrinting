@@ -291,9 +291,9 @@ function MyTemplatesContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] mb-1" style={{ color: '#e94560', fontWeight: 600 }}>Dashboard</p>
-            <h1 className="text-3xl font-bold mb-1" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>My Templates</h1>
-            <p style={{ color: '#72729e' }}>Manage your personal templates</p>
+            <p className="text-xs uppercase tracking-[0.2em] mb-1" style={{ color: 'var(--ed-accent)', fontWeight: 600 }}>Dashboard</p>
+            <h1 className="text-3xl font-bold mb-1" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--ed-heading)' }}>My Templates</h1>
+            <p style={{ color: 'var(--ed-subtext)' }}>Manage your personal templates</p>
           </div>
           <Link
             href="/templates/create"
@@ -354,7 +354,7 @@ function MyTemplatesContent() {
 
         {/* Templates Grid */}
         {filteredTemplates.length === 0 ? (
-          <div className="text-center py-16 rounded-2xl" style={{ background: 'white', border: '1px solid rgba(26,26,46,0.06)' }}>
+          <div className="text-center py-16 rounded-2xl" style={{ background: 'var(--ed-card-bg)', border: '1px solid var(--ed-card-border)' }}>
             <div className="relative w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center"
               style={{ background: 'linear-gradient(135deg, #1a1a2e, #2a2a46)' }}>
               <div style={{ color: 'rgba(255,255,255,0.6)' }}>
@@ -362,10 +362,10 @@ function MyTemplatesContent() {
               </div>
               <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full" style={{ background: '#e94560' }} />
             </div>
-            <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>
+            <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--ed-heading)' }}>
               {searchTerm || filterCategory !== 'all' ? 'No Templates Found' : 'No Templates Yet'}
             </h2>
-            <p className="mb-6" style={{ color: '#72729e' }}>
+            <p className="mb-6" style={{ color: 'var(--ed-subtext)' }}>
               {searchTerm || filterCategory !== 'all' 
                 ? 'Try adjusting your search or filters.'
                 : 'Create your first template to get started!'

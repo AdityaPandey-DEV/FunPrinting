@@ -107,16 +107,16 @@ export default function OrderDetailsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] mb-1" style={{ color: '#e94560', fontWeight: 600 }}>Order Details</p>
-            <h1 className="text-xl sm:text-2xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>#{order.orderId}</h1>
-            <p className="text-sm mt-1" style={{ color: '#72729e' }}>
+            <p className="text-xs uppercase tracking-[0.2em] mb-1" style={{ color: 'var(--ed-accent)', fontWeight: 600 }}>Order Details</p>
+            <h1 className="text-xl sm:text-2xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--ed-heading)' }}>#{order.orderId}</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--ed-subtext)' }}>
               Read-only view. Contact support for changes.
             </p>
           </div>
           <button
             onClick={() => router.push('/my-orders')}
             className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all"
-            style={{ background: 'rgba(26,26,46,0.04)', color: '#515182' }}
+            style={{ background: 'var(--ed-btn-secondary-bg)', color: 'var(--ed-btn-secondary-text)' }}
           >
             ← Back
           </button>

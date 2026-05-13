@@ -758,19 +758,19 @@ export default function TemplateFillPage({ params }: { params: Promise<{ id: str
           <Link
             href="/templates"
             className="text-sm font-medium transition-colors"
-            style={{ color: '#e94560' }}
+            style={{ color: 'var(--ed-accent)' }}
           >
             ← Back to Templates
           </Link>
         </div>
 
         {/* Template Header */}
-        <div className="rounded-2xl mb-6 overflow-hidden" style={{ background: 'white', border: '1px solid rgba(26,26,46,0.06)', boxShadow: '0 2px 12px rgba(26,26,46,0.04)' }}>
-          <div className="px-6 py-5" style={{ borderBottom: '1px solid rgba(26,26,46,0.06)' }}>
-            <h1 className="text-2xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>{template.name}</h1>
-            <p className="mt-1 text-sm" style={{ color: '#72729e' }}>{template.description}</p>
+        <div className="rounded-2xl mb-6 overflow-hidden" style={{ background: 'var(--ed-card-bg)', border: '1px solid var(--ed-card-border)', boxShadow: '0 2px 12px rgba(26,26,46,0.04)' }}>
+          <div className="px-6 py-5" style={{ borderBottom: '1px solid var(--ed-card-border)' }}>
+            <h1 className="text-2xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--ed-heading)' }}>{template.name}</h1>
+            <p className="mt-1 text-sm" style={{ color: 'var(--ed-subtext)' }}>{template.description}</p>
             <div className="mt-3 flex items-center flex-wrap gap-2">
-              <span className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: 'rgba(233,69,96,0.08)', color: '#e94560' }}>
+              <span className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: 'rgba(233,69,96,0.08)', color: 'var(--ed-accent)' }}>
                 {template.category}
               </span>
               {template.isPaid && (template.price ?? 0) > 0 ? (
@@ -794,13 +794,13 @@ export default function TemplateFillPage({ params }: { params: Promise<{ id: str
         {/* Main Content */}
         <div className="max-w-2xl mx-auto">
           {/* Form Section */}
-          <div className="rounded-2xl overflow-hidden" style={{ background: 'white', border: '1px solid rgba(26,26,46,0.06)', boxShadow: '0 2px 12px rgba(26,26,46,0.04)' }}>
-            <div className="px-6 py-5" style={{ borderBottom: '1px solid rgba(26,26,46,0.06)' }}>
-              <h2 className="text-lg font-semibold flex items-center" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--ed-card-bg)', border: '1px solid var(--ed-card-border)', boxShadow: '0 2px 12px rgba(26,26,46,0.04)' }}>
+            <div className="px-6 py-5" style={{ borderBottom: '1px solid var(--ed-card-border)' }}>
+              <h2 className="text-lg font-semibold flex items-center" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--ed-heading)' }}>
                 <MemoIcon size={20} className="w-5 h-5 mr-2" />
                 Fill Template Form
               </h2>
-              <p className="text-sm mt-1" style={{ color: '#72729e' }}>
+              <p className="text-sm mt-1" style={{ color: 'var(--ed-subtext)' }}>
                 Fill out the form below and download your personalized document
               </p>
             </div>

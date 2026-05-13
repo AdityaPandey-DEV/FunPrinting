@@ -251,11 +251,11 @@ export default function TemplatesPage() {
         {/* Header — compact on mobile */}
         <div className="flex justify-between items-start gap-3 mb-6">
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-[0.2em] mb-1 hidden sm:block" style={{ color: '#e94560', fontWeight: 600 }}>Browse</p>
-            <h1 className="text-2xl sm:text-4xl font-bold mb-1" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>
+            <p className="text-xs uppercase tracking-[0.2em] mb-1 hidden sm:block" style={{ color: 'var(--ed-accent)', fontWeight: 600 }}>Browse</p>
+            <h1 className="text-2xl sm:text-4xl font-bold mb-1" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--ed-heading)' }}>
               Templates
             </h1>
-            <p className="text-sm sm:text-base hidden sm:block" style={{ color: '#72729e' }}>
+            <p className="text-sm sm:text-base hidden sm:block" style={{ color: 'var(--ed-subtext)' }}>
               Choose a template and fill out the form to generate your personalized document
             </p>
           </div>
@@ -341,10 +341,10 @@ export default function TemplatesPage() {
         )}
 
         {/* Filters — compact horizontal on mobile */}
-        <div className="rounded-2xl p-4 sm:p-6 mb-6" style={{ background: 'white', border: '1px solid rgba(26,26,46,0.06)' }}>
+        <div className="rounded-2xl p-4 sm:p-6 mb-6" style={{ background: 'var(--ed-card-bg)', border: '1px solid var(--ed-card-border)' }}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: '#72729e' }}>Filter</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--ed-subtext)' }}>Filter</label>
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as 'all' | 'my' | 'public')}
@@ -356,7 +356,7 @@ export default function TemplatesPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: '#72729e' }}>Category</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--ed-subtext)' }}>Category</label>
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
@@ -371,7 +371,7 @@ export default function TemplatesPage() {
               </select>
             </div>
             <div className="col-span-2 sm:col-span-1">
-              <label className="block text-xs font-medium mb-1" style={{ color: '#72729e' }}>Search</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--ed-subtext)' }}>Search</label>
               <input
                 type="text"
                 placeholder="Search..."
@@ -384,7 +384,7 @@ export default function TemplatesPage() {
               <button
                 onClick={fetchTemplates}
                 className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
-                style={{ background: 'rgba(26,26,46,0.04)', color: '#515182' }}
+                style={{ background: 'var(--ed-btn-secondary-bg)', color: 'var(--ed-btn-secondary-text)' }}
               >
                 <RefreshIcon size={14} className="w-3.5 h-3.5" />
                 Refresh
