@@ -757,32 +757,33 @@ export default function TemplateFillPage({ params }: { params: Promise<{ id: str
         <div className="mb-8">
           <Link
             href="/templates"
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            className="text-sm font-medium transition-colors"
+            style={{ color: '#e94560' }}
           >
             ← Back to Templates
           </Link>
         </div>
 
         {/* Template Header */}
-        <div className="bg-white shadow rounded-lg mb-6">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">{template.name}</h1>
-            <p className="mt-1 text-sm text-gray-600">{template.description}</p>
-            <div className="mt-2 flex items-center flex-wrap gap-2">
-              <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+        <div className="rounded-2xl mb-6 overflow-hidden" style={{ background: 'white', border: '1px solid rgba(26,26,46,0.06)', boxShadow: '0 2px 12px rgba(26,26,46,0.04)' }}>
+          <div className="px-6 py-5" style={{ borderBottom: '1px solid rgba(26,26,46,0.06)' }}>
+            <h1 className="text-2xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>{template.name}</h1>
+            <p className="mt-1 text-sm" style={{ color: '#72729e' }}>{template.description}</p>
+            <div className="mt-3 flex items-center flex-wrap gap-2">
+              <span className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: 'rgba(233,69,96,0.08)', color: '#e94560' }}>
                 {template.category}
               </span>
               {template.isPaid && (template.price ?? 0) > 0 ? (
-                <span className="bg-orange-100 text-orange-800 text-xs px-3 py-1 rounded font-semibold">
+                <span className="text-xs px-3 py-1 rounded-full font-semibold" style={{ background: 'rgba(251,146,60,0.1)', color: '#ea580c' }}>
                   ₹{template.price}
                 </span>
               ) : (
-                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded font-medium">
+                <span className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: 'rgba(22,163,74,0.08)', color: '#16a34a' }}>
                   Free Template
                 </span>
               )}
               {template.isPaid && template.allowFreeDownload === false && (
-                <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
+                <span className="text-xs px-2.5 py-1 rounded-full" style={{ background: 'rgba(234,179,8,0.08)', color: '#ca8a04' }}>
                   Download requires payment
                 </span>
               )}
@@ -793,13 +794,13 @@ export default function TemplateFillPage({ params }: { params: Promise<{ id: str
         {/* Main Content */}
         <div className="max-w-2xl mx-auto">
           {/* Form Section */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'white', border: '1px solid rgba(26,26,46,0.06)', boxShadow: '0 2px 12px rgba(26,26,46,0.04)' }}>
+            <div className="px-6 py-5" style={{ borderBottom: '1px solid rgba(26,26,46,0.06)' }}>
+              <h2 className="text-lg font-semibold flex items-center" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>
                 <MemoIcon size={20} className="w-5 h-5 mr-2" />
                 Fill Template Form
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm mt-1" style={{ color: '#72729e' }}>
                 Fill out the form below and download your personalized document
               </p>
             </div>
@@ -907,7 +908,11 @@ export default function TemplateFillPage({ params }: { params: Promise<{ id: str
                     type={isAuthenticated ? 'submit' : 'button'}
                     onClick={!isAuthenticated ? (e: React.MouseEvent) => { e.preventDefault(); setAuthMode('signin'); setShowAuthModal(true); } : undefined}
                     disabled={isSubmitting}
-                    className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${isAuthenticated ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'} focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className="inline-flex items-center px-5 py-2.5 text-sm font-semibold rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    style={{
+                      background: 'linear-gradient(135deg, #e94560, #d52a4a)',
+                      boxShadow: '0 4px 16px rgba(233, 69, 96, 0.2)',
+                    }}
                   >
                     {!isAuthenticated ? (
                       <>

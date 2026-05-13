@@ -291,14 +291,22 @@ function MyTemplatesContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">My Templates</h1>
-            <p className="text-gray-600">Manage your personal templates</p>
+            <p className="text-xs uppercase tracking-[0.2em] mb-1" style={{ color: '#e94560', fontWeight: 600 }}>Dashboard</p>
+            <h1 className="text-3xl font-bold mb-1" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>My Templates</h1>
+            <p style={{ color: '#72729e' }}>Manage your personal templates</p>
           </div>
           <Link
             href="/templates/create"
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            className="text-white font-semibold rounded-xl transition-all"
+            style={{
+              background: 'linear-gradient(135deg, #e94560, #d52a4a)',
+              boxShadow: '0 4px 16px rgba(233, 69, 96, 0.2)',
+              padding: '0.625rem 1.25rem',
+              fontSize: '0.875rem',
+            }}
           >
-            + Create New Template
+            <span className="hidden sm:inline">+ Create New Template</span>
+            <span className="sm:hidden">+ Create</span>
           </Link>
         </div>
 
@@ -346,14 +354,16 @@ function MyTemplatesContent() {
 
         {/* Templates Grid */}
         {filteredTemplates.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-            <div className="flex justify-center mb-4">
-              <DocumentIcon size={64} className="w-16 h-16 text-gray-400" />
+          <div className="text-center py-16 rounded-2xl" style={{ background: 'white', border: '1px solid rgba(26,26,46,0.06)' }}>
+            <div className="relative w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #1a1a2e, #2a2a46)' }}>
+              <DocumentIcon size={40} className="w-10 h-10" style={{ color: 'rgba(255,255,255,0.6)' }} />
+              <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full" style={{ background: '#e94560' }} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>
               {searchTerm || filterCategory !== 'all' ? 'No Templates Found' : 'No Templates Yet'}
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="mb-6" style={{ color: '#72729e' }}>
               {searchTerm || filterCategory !== 'all' 
                 ? 'Try adjusting your search or filters.'
                 : 'Create your first template to get started!'
@@ -362,8 +372,15 @@ function MyTemplatesContent() {
             {!searchTerm && filterCategory === 'all' && (
               <Link
                 href="/templates/create"
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 inline-block"
+                className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-xl font-semibold"
+                style={{
+                  background: 'linear-gradient(135deg, #e94560, #d52a4a)',
+                  boxShadow: '0 4px 16px rgba(233, 69, 96, 0.2)',
+                }}
               >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
                 Create First Template
               </Link>
             )}
