@@ -137,6 +137,7 @@ export default function Navbar() {
               >
                 {link.label}
               </Link>
+            ))}
           </div>
 
           {/* Mobile Authentication Section */}
