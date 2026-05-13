@@ -5,7 +5,7 @@ import { useAdminInfo } from '@/hooks/useAdminInfo';
 import { FacebookIcon, InstagramIcon, TwitterIcon, LinkedInIcon, YouTubeIcon, LocationIcon, EmailIcon, PhoneIcon, ClockIcon, WebsiteIcon } from '@/components/SocialIcons';
 
 export default function Footer() {
-  const { adminInfo, loading } = useAdminInfo();
+  const { adminInfo } = useAdminInfo();
 
   const footerLinks = [
     { href: '/terms', label: 'Terms & Conditions' },

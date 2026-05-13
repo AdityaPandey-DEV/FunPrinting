@@ -35,7 +35,7 @@ function useInView(threshold = 0.15) {
 
 export default function Home() {
   const [pricing, setPricing] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
 
   const servicesSection = useInView();
   const featuresSection = useInView();
@@ -88,7 +88,7 @@ export default function Home() {
 
   const getServicePrice = (priceKey: string) => {
     if (!pricing) return <span className="text-charcoal-400 text-sm animate-pulse">Loading...</span>;
-    let original = 0, discounted = 0, label = '/page', discount = '50% OFF';
+    let original = 0, discounted = 0, label = '/page'; const discount = '50% OFF';
     switch (priceKey) {
       case 'bw':
         original = pricing.basePrices.A4 * 2; discounted = pricing.basePrices.A4; break;

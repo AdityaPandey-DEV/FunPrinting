@@ -6,7 +6,7 @@ import { useAdminInfo } from '@/hooks/useAdminInfo';
 import { DocumentIcon, TruckIcon } from '@/components/SocialIcons';
 
 export default function ContactPage() {
-  const { adminInfo, loading } = useAdminInfo();
+  const { adminInfo } = useAdminInfo();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
