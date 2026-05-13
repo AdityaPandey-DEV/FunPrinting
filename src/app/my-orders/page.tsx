@@ -335,14 +335,16 @@ export default function MyOrdersPage() {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center py-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">My Orders</h1>
-            <p className="text-lg text-gray-600 mb-8">
+          <div className="text-center py-16">
+            <p className="text-xs uppercase tracking-[0.2em] mb-2" style={{ color: '#e94560', fontWeight: 600 }}>Account</p>
+            <h1 className="text-3xl font-bold mb-3" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>My Orders</h1>
+            <p className="text-base mb-8" style={{ color: '#72729e' }}>
               Please sign in to view your orders
             </p>
             <a
               href="/auth/signin?callbackUrl=/my-orders"
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-medium hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+              style={{ background: 'linear-gradient(135deg, #e94560, #d52a4a)', boxShadow: '0 4px 16px rgba(233,69,96,0.2)' }}
             >
               Sign In
             </a>
@@ -355,21 +357,21 @@ export default function MyOrdersPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">My Orders</h1>
-          <p className="text-lg text-gray-600">
-            Welcome back, {user?.name || user?.email}! Here are your printing orders.
-          </p>
-        </div>
-
-        {/* Refresh Button */}
-        <div className="text-center mb-8">
+        <div className="flex justify-between items-start gap-3 mb-8">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] mb-1" style={{ color: '#e94560', fontWeight: 600 }}>Account</p>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>My Orders</h1>
+            <p className="text-sm sm:text-base" style={{ color: '#72729e' }}>
+              Welcome back, {user?.name || user?.email}
+            </p>
+          </div>
           <button
             onClick={loadOrders}
             disabled={isLoading}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
+            style={{ background: 'rgba(26,26,46,0.04)', color: '#515182' }}
           >
-            {isLoading ? 'Refreshing...' : 'Refresh Orders'}
+            {isLoading ? 'Refreshing...' : '↻ Refresh'}
           </button>
         </div>
 

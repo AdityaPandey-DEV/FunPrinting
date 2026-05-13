@@ -105,18 +105,20 @@ export default function OrderDetailsPage() {
   return (
     <div className="min-h-screen bg-gray-100 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Order #{order.orderId}</h1>
-            <p className="text-sm text-gray-600">
-              This is a read-only view of your order. For any changes, please contact support at the counter.
+            <p className="text-xs uppercase tracking-[0.2em] mb-1" style={{ color: '#e94560', fontWeight: 600 }}>Order Details</p>
+            <h1 className="text-xl sm:text-2xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>#{order.orderId}</h1>
+            <p className="text-sm mt-1" style={{ color: '#72729e' }}>
+              Read-only view. Contact support for changes.
             </p>
           </div>
           <button
             onClick={() => router.push('/my-orders')}
-            className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm"
+            className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all"
+            style={{ background: 'rgba(26,26,46,0.04)', color: '#515182' }}
           >
-            Back to My Orders
+            ← Back
           </button>
         </div>
 

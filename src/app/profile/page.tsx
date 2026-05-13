@@ -358,7 +358,10 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Profile Settings</h1>
+        <div className="mb-8">
+          <p className="text-xs uppercase tracking-[0.2em] mb-1" style={{ color: '#e94560', fontWeight: 600 }}>Account</p>
+          <h1 className="text-2xl sm:text-3xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>Profile Settings</h1>
+        </div>
 
         {/* Profile Form - Always visible, password only required when saving changes */}
         <div className="bg-white rounded-lg shadow-md p-6">
