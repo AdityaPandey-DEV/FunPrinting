@@ -130,26 +130,68 @@ export default function CartPage() {
             <div className="max-w-5xl mx-auto px-4 py-8">
                 {cartItems.length === 0 ? (
                     /* Empty Cart */
-                    <div className="text-center py-20">
-                        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center text-4xl"
-                            style={{ background: 'var(--color-cream-200)' }}>
-                            🛒
+                    <div className="flex flex-col items-center justify-center py-24 px-4">
+                        {/* Decorative element */}
+                        <div className="relative mb-10">
+                            <div className="w-32 h-32 rounded-3xl flex items-center justify-center relative overflow-hidden"
+                                style={{
+                                    background: 'linear-gradient(135deg, #1a1a2e 0%, #2a2a46 100%)',
+                                    boxShadow: '0 20px 60px rgba(26, 26, 46, 0.15)',
+                                }}>
+                                {/* Paper texture */}
+                                <div className="absolute inset-0 opacity-[0.04]"
+                                    style={{
+                                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+                                    }}
+                                />
+                                <svg className="w-14 h-14 relative z-10" fill="none" stroke="white" strokeWidth={1.2} viewBox="0 0 24 24" style={{ opacity: 0.7 }}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                                </svg>
+                            </div>
+                            {/* Ink dot accent */}
+                            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full"
+                                style={{ background: '#e94560', boxShadow: '0 2px 8px rgba(233, 69, 96, 0.4)' }} />
                         </div>
-                        <h2 className="text-xl font-bold mb-2"
-                            style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>
-                            Your cart is empty
-                        </h2>
-                        <p className="text-sm mb-6" style={{ color: '#72729e' }}>
-                            Add files to your cart to batch multiple print orders together
+
+                        {/* Typography */}
+                        <p className="text-xs uppercase tracking-[0.2em] mb-3"
+                            style={{ color: '#e94560', fontWeight: 600 }}>
+                            Cart
                         </p>
+                        <h2 className="text-3xl font-bold mb-3"
+                            style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>
+                            Nothing here yet.
+                        </h2>
+                        <p className="text-base max-w-sm text-center mb-8 leading-relaxed"
+                            style={{ color: '#72729e' }}>
+                            Add your documents to the cart to combine multiple
+                            print jobs into a single order — saving on delivery.
+                        </p>
+
+                        {/* CTA */}
                         <Link href="/order"
-                            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white"
+                            className="inline-flex items-center gap-2.5 px-8 py-3.5 rounded-xl text-base font-semibold text-white"
                             style={{
-                                background: 'linear-gradient(135deg, #e94560, #1a1a2e)',
-                                boxShadow: '0 4px 16px rgba(233, 69, 96, 0.2)',
+                                background: 'linear-gradient(135deg, #e94560, #d52a4a)',
+                                boxShadow: '0 4px 20px rgba(233, 69, 96, 0.25)',
+                                transition: 'all 0.3s ease',
                             }}
+                            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(233,69,96,0.3)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(233,69,96,0.25)'; }}
                         >
-                            📄 Start Ordering
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Start a Print Order
+                        </Link>
+
+                        {/* Secondary link */}
+                        <Link href="/templates" className="mt-4 text-sm font-medium"
+                            style={{ color: '#a3a3c2', transition: 'color 0.2s ease' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.color = '#e94560'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.color = '#a3a3c2'; }}
+                        >
+                            or browse templates →
                         </Link>
                     </div>
                 ) : (
