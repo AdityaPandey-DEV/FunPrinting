@@ -248,21 +248,29 @@ export default function TemplatesPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Available Templates
+        {/* Header — compact on mobile */}
+        <div className="flex justify-between items-start gap-3 mb-6">
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-[0.2em] mb-1 hidden sm:block" style={{ color: '#e94560', fontWeight: 600 }}>Browse</p>
+            <h1 className="text-2xl sm:text-4xl font-bold mb-1" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>
+              Templates
             </h1>
-            <p className="text-xl text-gray-600">
+            <p className="text-sm sm:text-base hidden sm:block" style={{ color: '#72729e' }}>
               Choose a template and fill out the form to generate your personalized document
             </p>
           </div>
           {session && (
             <Link
               href="/templates/create"
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex-shrink-0 text-white font-semibold rounded-xl transition-all text-sm whitespace-nowrap"
+              style={{
+                background: 'linear-gradient(135deg, #e94560, #d52a4a)',
+                boxShadow: '0 4px 16px rgba(233, 69, 96, 0.2)',
+                padding: '0.5rem 0.875rem',
+              }}
             >
-              + Create Template
+              <span className="hidden sm:inline">+ Create Template</span>
+              <span className="sm:hidden">+ Create</span>
             </Link>
           )}
         </div>
@@ -332,39 +340,29 @@ export default function TemplatesPage() {
           </div>
         )}
 
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Filters — compact horizontal on mobile */}
+        <div className="rounded-2xl p-4 sm:p-6 mb-6" style={{ background: 'white', border: '1px solid rgba(26,26,46,0.06)' }}>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Filter</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: '#72729e' }}>Filter</label>
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as 'all' | 'my' | 'public')}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">All Templates</option>
+                <option value="all">All</option>
                 {session && <option value="my">My Templates</option>}
-                <option value="public">Public Templates</option>
+                <option value="public">Public</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-              <input
-                type="text"
-                placeholder="Search templates..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: '#72729e' }}>Category</label>
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">All Categories</option>
+                <option value="all">All</option>
                 <option value="lab-manual">Lab Manual</option>
                 <option value="assignment">Assignment</option>
                 <option value="report">Report</option>
@@ -372,15 +370,24 @@ export default function TemplatesPage() {
                 <option value="other">Other</option>
               </select>
             </div>
-            <div className="flex items-end">
+            <div className="col-span-2 sm:col-span-1">
+              <label className="block text-xs font-medium mb-1" style={{ color: '#72729e' }}>Search</label>
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="col-span-2 sm:col-span-1 flex items-end">
               <button
                 onClick={fetchTemplates}
-                className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
+                style={{ background: 'rgba(26,26,46,0.04)', color: '#515182' }}
               >
-                <span className="flex items-center gap-2">
-                  <RefreshIcon size={18} className="w-4.5 h-4.5" />
-                  Refresh
-                </span>
+                <RefreshIcon size={14} className="w-3.5 h-3.5" />
+                Refresh
               </button>
             </div>
           </div>
