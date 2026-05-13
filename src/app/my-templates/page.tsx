@@ -357,7 +357,9 @@ function MyTemplatesContent() {
           <div className="text-center py-16 rounded-2xl" style={{ background: 'white', border: '1px solid rgba(26,26,46,0.06)' }}>
             <div className="relative w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center"
               style={{ background: 'linear-gradient(135deg, #1a1a2e, #2a2a46)' }}>
-              <DocumentIcon size={40} className="w-10 h-10" style={{ color: 'rgba(255,255,255,0.6)' }} />
+              <div style={{ color: 'rgba(255,255,255,0.6)' }}>
+                <DocumentIcon size={40} className="w-10 h-10" />
+              </div>
               <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full" style={{ background: '#e94560' }} />
             </div>
             <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e' }}>
