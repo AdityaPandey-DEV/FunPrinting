@@ -678,3 +678,89 @@ a.rounded-lg, a.rounded-xl, a.rounded-md {
   font-family: var(--font-body);
 }
 
+/* ============================================
+   DARK MODE — Restyle Layer Overrides
+   Inverts cream→charcoal, dark text→light
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  /* --- Backgrounds: cream → charcoal surfaces --- */
+  .bg-gray-50  { background-color: var(--color-charcoal-900) !important; }
+  .bg-gray-100 { background-color: var(--color-charcoal-800) !important; }
+  .bg-gray-200 { background-color: var(--color-charcoal-700) !important; }
+  .bg-gray-300 { background-color: var(--color-charcoal-600) !important; }
+  .bg-white { background-color: var(--color-charcoal-800) !important; }
+
+  /* --- Text: dark → light --- */
+  .text-gray-900 { color: var(--color-cream-100) !important; }
+  .text-gray-800 { color: var(--color-cream-200) !important; }
+  .text-gray-700 { color: var(--color-cream-300) !important; }
+  .text-gray-600 { color: var(--color-charcoal-300) !important; }
+  .text-gray-500 { color: var(--color-charcoal-300) !important; }
+  .text-gray-400 { color: var(--color-charcoal-200) !important; }
+
+  /* --- Borders: lighter for dark bg --- */
+  .border-gray-200 { border-color: rgba(255, 255, 255, 0.08) !important; }
+  .border-gray-300 { border-color: rgba(255, 255, 255, 0.12) !important; }
+
+  /* --- Cards: dark surfaces --- */
+  .bg-white.rounded-lg,
+  .bg-white.rounded-2xl,
+  .bg-white.rounded-xl {
+    background-color: var(--color-charcoal-800) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  /* --- Blue/ink badges on dark --- */
+  .bg-blue-50 { background-color: rgba(233, 69, 96, 0.1) !important; }
+  .bg-blue-100 { background-color: rgba(233, 69, 96, 0.15) !important; }
+  .bg-purple-50 { background-color: rgba(26, 26, 46, 0.5) !important; }
+  .bg-purple-100 { background-color: rgba(26, 26, 46, 0.6) !important; }
+
+  /* --- Purple/blue text stays light --- */
+  .text-blue-600,
+  .text-blue-500 { color: var(--color-ink-400) !important; }
+  .text-blue-700 { color: var(--color-ink-300) !important; }
+  .text-blue-800 { color: var(--color-ink-200) !important; }
+  .text-blue-900 { color: var(--color-ink-200) !important; }
+  .text-purple-800 { color: var(--color-charcoal-300) !important; }
+  .text-purple-700 { color: var(--color-charcoal-200) !important; }
+  .text-purple-600 { color: var(--color-charcoal-200) !important; }
+  .text-indigo-600 { color: var(--color-charcoal-200) !important; }
+
+  /* --- Form inputs --- */
+  input[type="text"].border-gray-300,
+  input[type="email"].border-gray-300,
+  input[type="password"].border-gray-300,
+  input[type="tel"].border-gray-300,
+  input[type="date"].border-gray-300,
+  input[type="number"].border-gray-300,
+  select.border-gray-300,
+  textarea.border-gray-300,
+  input.border.border-gray-300,
+  select.border.border-gray-300 {
+    background-color: var(--color-charcoal-800) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: var(--color-cream-100) !important;
+  }
+
+  /* --- Hover states on dark --- */
+  .hover\:bg-blue-50:hover { background-color: rgba(233, 69, 96, 0.12) !important; }
+
+  /* --- Status message boxes --- */
+  .form-message-success { background-color: rgba(22, 163, 74, 0.15) !important; border-color: rgba(22, 163, 74, 0.3) !important; color: #86efac !important; }
+  .form-message-error { background-color: rgba(239, 68, 68, 0.15) !important; border-color: rgba(239, 68, 68, 0.3) !important; color: #fca5a5 !important; }
+  .form-message-info { background-color: rgba(59, 130, 246, 0.15) !important; border-color: rgba(59, 130, 246, 0.3) !important; color: #93c5fd !important; }
+
+  /* --- Glassmorphism on dark --- */
+  .glass { background: rgba(26, 26, 46, 0.85) !important; border-color: rgba(255, 255, 255, 0.06) !important; }
+
+  /* --- Selection --- */
+  ::selection { background-color: rgba(233, 69, 96, 0.3); color: var(--color-cream-100); }
+
+  /* --- Borders for blue on dark --- */
+  .border-blue-200 { border-color: rgba(233, 69, 96, 0.15) !important; }
+  .border-blue-300 { border-color: rgba(233, 69, 96, 0.2) !important; }
+  .border-blue-400 { border-color: rgba(233, 69, 96, 0.3) !important; }
+  .border-purple-200 { border-color: rgba(255, 255, 255, 0.08) !important; }
+}
