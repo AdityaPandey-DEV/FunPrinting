@@ -7,7 +7,7 @@
 
 **Fun Printing** is a modern, full-stack automated printing orchestration platform designed for high-volume campus environments. It streamlines the end-to-end printing lifecycle—from intelligent file queueing and document processing to secure automated payments and real-time order fulfillment.
 
-**Live Demo:** [funprinting.store](https://www.funprinting.store/)]
+**Live Demo:** [funprinting.store](https://www.funprinting.store/)
 
 ---
 
