@@ -30,7 +30,7 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.4",
     "bcryptjs": "^3.0.2",
-    "cloudinary": "^2.7.0",
+    "cloudinary": "^2.10.0",
     "docx": "^9.5.1",
     "docx-preview": "^0.3.6",
     "docx-templates": "^4.14.1",
